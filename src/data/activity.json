@@ -1,0 +1,131 @@
+[
+  {
+    "activity_id": 11,
+    "participant_id": 16,
+    "participant_name": "Deepak",
+    "question_id": null,
+    "event_type": "quiz_submitted",
+    "selected_option": null,
+    "event_time": "2026-09-23T05:32:29.257Z",
+    "details": "Final score: 1/20 (5%)",
+    "severity": "normal"
+  },
+  {
+    "activity_id": 10,
+    "participant_id": 14,
+    "participant_name": "Omega",
+    "question_id": null,
+    "event_type": "quiz_submitted",
+    "selected_option": null,
+    "event_time": "2026-09-22T08:17:22.819Z",
+    "details": "Final score: 0/20 (0%)",
+    "severity": "normal"
+  },
+  {
+    "activity_id": 9,
+    "participant_id": 13,
+    "participant_name": "Shiju SS",
+    "question_id": null,
+    "event_type": "quiz_submitted",
+    "selected_option": null,
+    "event_time": "2026-09-22T08:16:22.801Z",
+    "details": "Final score: 0/20 (0%)",
+    "severity": "normal"
+  },
+  {
+    "activity_id": 1,
+    "participant_id": 1,
+    "participant_name": "Vibhakar S",
+    "registration_number": "+91 98765 43210",
+    "question_id": 7,
+    "event_type": "answer_selected",
+    "selected_option": "b",
+    "event_time": "2026-09-22T08:11:42.000Z",
+    "details": "Answered Question 7 (Option B)",
+    "severity": "normal"
+  },
+  {
+    "activity_id": 2,
+    "participant_id": 2,
+    "participant_name": "Rahul Mehta",
+    "registration_number": "+91 98450 12345",
+    "question_id": 6,
+    "event_type": "tab_switch",
+    "selected_option": null,
+    "event_time": "2026-09-22T08:11:18.000Z",
+    "details": "Participant switched browser tab",
+    "severity": "violation"
+  },
+  {
+    "activity_id": 3,
+    "participant_id": 6,
+    "participant_name": "Karthik Raja",
+    "registration_number": "+91 94444 55667",
+    "question_id": 5,
+    "event_type": "fullscreen_exit",
+    "selected_option": null,
+    "event_time": "2026-09-22T08:10:35.000Z",
+    "details": "Exited fullscreen mode",
+    "severity": "warning"
+  },
+  {
+    "activity_id": 4,
+    "participant_id": 7,
+    "participant_name": "Sneha Patel",
+    "registration_number": "+91 93222 77889",
+    "question_id": 6,
+    "event_type": "answer_selected",
+    "selected_option": "c",
+    "event_time": "2026-09-22T08:11:30.000Z",
+    "details": "Answered Question 6 (Option C)",
+    "severity": "normal"
+  },
+  {
+    "activity_id": 5,
+    "participant_id": 2,
+    "participant_name": "Rahul Mehta",
+    "registration_number": "+91 98450 12345",
+    "question_id": 6,
+    "event_type": "focus_loss",
+    "selected_option": null,
+    "event_time": "2026-09-22T08:11:05.000Z",
+    "details": "Browser window focus lost",
+    "severity": "warning"
+  },
+  {
+    "activity_id": 6,
+    "participant_id": 3,
+    "participant_name": "Ananya Sharma",
+    "registration_number": "+91 99123 45678",
+    "question_id": null,
+    "event_type": "quiz_submitted",
+    "selected_option": null,
+    "event_time": "2026-09-22T08:11:10.000Z",
+    "details": "Submitted quiz with score 9/10",
+    "severity": "normal"
+  },
+  {
+    "activity_id": 7,
+    "participant_id": 5,
+    "participant_name": "Priya Nair",
+    "registration_number": "+91 98111 22334",
+    "question_id": null,
+    "event_type": "quiz_submitted",
+    "selected_option": null,
+    "event_time": "2026-09-22T08:09:25.000Z",
+    "details": "Submitted quiz with score 10/10",
+    "severity": "normal"
+  },
+  {
+    "activity_id": 8,
+    "participant_id": 1,
+    "participant_name": "Vibhakar S",
+    "registration_number": "+91 98765 43210",
+    "question_id": null,
+    "event_type": "quiz_started",
+    "selected_option": null,
+    "event_time": "2026-09-22T08:05:00.000Z",
+    "details": "Entered quiz TECH26",
+    "severity": "normal"
+  }
+]
