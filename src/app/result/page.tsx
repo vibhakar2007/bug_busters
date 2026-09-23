@@ -6,11 +6,10 @@ import { ParticipantResult } from '@/types/participant';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { animatePageEntrance, animateResultReveal } from '@/animations/gsap';
+import { animatePageEntrance, animateResultReveal, animateStaggerCards } from '@/animations/gsap';
 import {
   AlertTriangle,
   Clock,
-  ArrowRight,
   ShieldCheck,
   HelpCircle,
   Check,
@@ -18,7 +17,8 @@ import {
   MinusCircle,
   BookOpen,
 } from 'lucide-react';
-import { cn } from '@/lib/utils/cn';
+import { cn, formatTime } from '@/lib/utils/cn';
+import { participantService } from '@/lib/api/participantService';
 
 export default function ResultPage() {
   const [result, setResult] = useState<ParticipantResult | null>(null);
@@ -30,28 +30,60 @@ export default function ResultPage() {
   useEffect(() => {
     animatePageEntrance(containerRef.current);
 
-    const timer = setTimeout(() => {
+    let isMounted = true;
+    const loadResult = async () => {
       if (typeof window !== 'undefined') {
         try {
+          const activeParticipantId = localStorage.getItem('bugbusters_active_participant_id');
           const stored = localStorage.getItem('bugbusters_latest_result');
-          if (stored) {
-            const parsed: ParticipantResult = JSON.parse(stored);
-            setResult(parsed);
+          let parsed: ParticipantResult | null = null;
 
-            // Animate score count-up
-            animateResultReveal(scoreRef.current, parsed.score, (val) => {
-              setDisplayedScore(val);
-            });
+          if (stored) {
+            try {
+              const obj: ParticipantResult = JSON.parse(stored);
+              if (!activeParticipantId || String(obj.participant_id) === String(activeParticipantId)) {
+                parsed = obj;
+              }
+            } catch {
+              // ignore parse errors
+            }
+          }
+
+          if (!parsed && activeParticipantId) {
+            parsed = await participantService.getParticipantResult(Number(activeParticipantId));
+          }
+
+          if (isMounted && parsed) {
+            setResult(parsed);
+            setDisplayedScore(parsed.score);
           }
         } catch (err) {
-          console.warn('Failed to load result from localStorage:', err);
+          console.warn('Failed to load result:', err);
         }
       }
-      setIsLoaded(true);
-    }, 0);
+      if (isMounted) setIsLoaded(true);
+    };
 
-    return () => clearTimeout(timer);
+    loadResult();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
+
+  useEffect(() => {
+    if (result) {
+      if (scoreRef.current) {
+        animateResultReveal(scoreRef.current, result.score, (val) => {
+          setDisplayedScore(val);
+        });
+      }
+      const timer = setTimeout(() => {
+        animateStaggerCards('.review-card');
+      }, 80);
+      return () => clearTimeout(timer);
+    }
+  }, [result]);
 
   if (!isLoaded) {
     return (
@@ -94,11 +126,8 @@ export default function ResultPage() {
     >
       {/* Top Header */}
       <div className="max-w-2xl mx-auto w-full flex items-center justify-between pb-6 border-b border-neutral-100">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-neutral-900 text-white rounded-lg flex items-center justify-center font-bold text-xs">
-            BB
-          </div>
-          <span className="font-semibold text-sm text-neutral-950">BugBusters</span>
+        <div className="flex items-center">
+          <span className="font-bold text-base sm:text-lg text-neutral-950 tracking-tight">Bug Busters</span>
         </div>
         <Badge variant="success" dot>
           Completed
@@ -109,11 +138,8 @@ export default function ResultPage() {
       <main className="max-w-2xl mx-auto w-full my-8 space-y-8">
         {/* Header Title */}
         <div className="text-center">
-          <span className="text-xs font-bold uppercase tracking-widest text-neutral-400">
-            BUGBUSTERS
-          </span>
-          <h1 className="text-3xl sm:text-4xl font-bold text-neutral-950 tracking-tight mt-1">
-            Quiz completed
+          <h1 className="text-3xl sm:text-4xl font-bold text-neutral-950 tracking-tight">
+            Quiz Completed
           </h1>
           <p className="text-sm text-neutral-500 mt-1.5">
             Participant: <strong className="text-neutral-900 font-semibold">{result.name}</strong> •{' '}
@@ -132,19 +158,17 @@ export default function ResultPage() {
                 ref={scoreRef}
                 className="text-6xl sm:text-7xl font-bold tracking-tight text-neutral-950 font-mono-tabular"
               >
-                {displayedScore}
+                {displayedScore > 0 ? displayedScore : result.score}
               </span>
               <span className="text-2xl sm:text-3xl font-medium text-neutral-400 font-mono-tabular">
                 / {result.total_questions}
               </span>
             </div>
 
-            <div className="mt-3 flex items-center justify-center gap-2 text-xs font-medium text-neutral-500">
+            <div className="mt-3 flex items-center justify-center text-xs font-medium text-neutral-500">
               <span className="bg-neutral-100 px-3 py-1 rounded-full text-neutral-800 font-mono-tabular font-semibold">
                 {result.percentage}% Accuracy
               </span>
-              <span>•</span>
-              <span className="text-neutral-500 font-medium">No negative marking</span>
             </div>
           </div>
 
@@ -190,7 +214,9 @@ export default function ResultPage() {
                 <span>Time Taken</span>
               </div>
               <span className="text-xl font-bold text-neutral-900 font-mono-tabular">
-                {result.time_taken_formatted}
+                {result.time_taken_seconds && result.time_taken_seconds > (result.total_questions || 20) * 60
+                  ? formatTime((result.total_questions || 20) * 60)
+                  : result.time_taken_formatted || formatTime(result.time_taken_seconds || 0)}
               </span>
             </div>
 
@@ -221,16 +247,10 @@ export default function ResultPage() {
             </span>
           </div>
 
-          <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
-            <Link href="/" className="w-full">
-              <Button variant="outline" size="md" className="w-full">
+          <div className="pt-2 flex items-center justify-center">
+            <Link href="/" className="w-full sm:w-auto">
+              <Button variant="outline" size="md" className="w-full sm:w-48">
                 Return to Home
-              </Button>
-            </Link>
-            <Link href="/admin/monitor" className="w-full">
-              <Button variant="primary" size="md" className="w-full gap-2">
-                <span>View Live Monitor</span>
-                <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
           </div>
@@ -257,12 +277,12 @@ export default function ResultPage() {
           {/* Question Review List */}
           <div className="space-y-4 mt-4">
             {result.review_items && result.review_items.length > 0 ? (
-              result.review_items.map((item) => {
+              result.review_items.map((item, idx) => {
                 return (
                   <Card
-                    key={item.question_id}
+                    key={`${item.question_id}-${item.question_index ?? idx}`}
                     className={cn(
-                      'p-5 sm:p-6 transition-all border',
+                      'review-card p-5 sm:p-6 transition-all border',
                       item.is_correct
                         ? 'border-emerald-200/80 bg-white'
                         : item.is_unanswered

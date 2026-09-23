@@ -7,7 +7,7 @@ import { ParticipantDrawer } from '@/components/admin/ParticipantDrawer';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { animatePageEntrance } from '@/animations/gsap';
+import { animatePageEntrance, animateStaggerCards } from '@/animations/gsap';
 import {
   Trophy,
   Medal,
@@ -36,6 +36,8 @@ interface EnrichedResultItem {
   time_taken_seconds: number;
   time_taken_formatted: string;
   integrity_status: 'Verified Clean' | 'Minor Warning' | 'Audit Flagged';
+  is_valid: boolean;
+  rank: number | null;
   result: ParticipantResult | null;
 }
 
@@ -107,6 +109,8 @@ export default function AdminResultsPage() {
         }
 
         const violations = p.violation_count || 0;
+        const isFlagged = p.status === 'flagged' || violations >= 3;
+        const isValid = !isFlagged;
         const integrity: 'Verified Clean' | 'Minor Warning' | 'Audit Flagged' =
           violations === 0 ? 'Verified Clean' : violations >= 3 ? 'Audit Flagged' : 'Minor Warning';
 
@@ -125,6 +129,8 @@ export default function AdminResultsPage() {
           time_taken_seconds: timeSec,
           time_taken_formatted: timeFmt,
           integrity_status: integrity,
+          is_valid: isValid,
+          rank: null,
           result: res,
         };
       });
@@ -132,17 +138,43 @@ export default function AdminResultsPage() {
 
   // Filter and sort
   const ranked = useMemo(() => {
-    return enrichedList
+    // 1. Calculate official standing for all valid (non-flagged) participants
+    const validSorted = [...enrichedList]
+      .filter((item) => item.is_valid)
+      .sort((a, b) => {
+        const scoreDiff = b.score - a.score;
+        if (scoreDiff !== 0) return scoreDiff;
+        return a.time_taken_seconds - b.time_taken_seconds;
+      });
+
+    const rankMap = new Map<number, number>();
+    validSorted.forEach((item, index) => {
+      rankMap.set(item.participant_id, index + 1);
+    });
+
+    const withRanks = enrichedList.map((item) => ({
+      ...item,
+      rank: item.is_valid ? rankMap.get(item.participant_id) || null : null,
+    }));
+
+    return withRanks
       .filter((item) => {
         const query = search.toLowerCase();
         return item.name.toLowerCase().includes(query) || item.phone.toLowerCase().includes(query);
       })
       .sort((a, b) => {
-        let diff = 0;
+        // When sorting by score, valid participants always appear ahead of disqualified ones
         if (sortField === 'score') {
-          diff = b.score - a.score;
-          if (diff === 0) diff = a.time_taken_seconds - b.time_taken_seconds;
-        } else if (sortField === 'time') {
+          if (a.is_valid !== b.is_valid) {
+            return a.is_valid ? -1 : 1;
+          }
+          const diff = b.score - a.score;
+          if (diff !== 0) return sortOrder === 'asc' ? -diff : diff;
+          return a.time_taken_seconds - b.time_taken_seconds;
+        }
+
+        let diff = 0;
+        if (sortField === 'time') {
           diff = a.time_taken_seconds - b.time_taken_seconds;
         } else if (sortField === 'violations') {
           diff = a.violation_count - b.violation_count;
@@ -156,15 +188,25 @@ export default function AdminResultsPage() {
   }, [enrichedList, search, sortField, sortOrder]);
 
   const top3 = useMemo(() => {
-    // Top 3 by score descending, violations ascending
+    // Only VALID (non-flagged) participants qualify for the final podium!
     return [...enrichedList]
+      .filter((item) => item.is_valid)
       .sort((a, b) => {
         const scoreDiff = b.score - a.score;
         if (scoreDiff !== 0) return scoreDiff;
-        return a.violation_count - b.violation_count;
+        return a.time_taken_seconds - b.time_taken_seconds;
       })
       .slice(0, 3);
   }, [enrichedList]);
+
+  useEffect(() => {
+    if (top3.length > 0) {
+      const timer = setTimeout(() => {
+        animateStaggerCards('.podium-card');
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [top3.length]);
 
   const exportCSV = () => {
     const headers = [
@@ -180,13 +222,14 @@ export default function AdminResultsPage() {
       'Violations',
       'Time Taken',
       'Integrity Status',
+      'Validation Status',
     ];
 
-    const rows = ranked.map((item, idx) => [
-      idx + 1,
+    const rows = ranked.map((item) => [
+      item.is_valid ? `#${item.rank}` : 'Disqualified',
       `"${item.name.replace(/"/g, '""')}"`,
       `"${item.phone}"`,
-      item.score,
+      item.is_valid ? item.score : `"${item.score} (Invalid)"`,
       item.total_questions,
       `${item.percentage}%`,
       item.correct_count,
@@ -195,6 +238,7 @@ export default function AdminResultsPage() {
       item.violation_count,
       `"${item.time_taken_formatted}"`,
       `"${item.integrity_status}"`,
+      item.is_valid ? 'Valid' : 'Disqualified (Flagged)',
     ]);
 
     const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
@@ -244,20 +288,19 @@ export default function AdminResultsPage() {
           {top3.map((winner, idx) => {
             const ranks = ['1st Place • Winner', '2nd Place • Runner Up', '3rd Place • Finalist'];
             const icons = [Trophy, Medal, Award];
-            const colors = [
-              'bg-neutral-900 text-white border-neutral-900',
-              'bg-neutral-50 text-neutral-900 border-neutral-200/90',
-              'bg-neutral-50 text-neutral-900 border-neutral-200/90',
-            ];
             const Icon = icons[idx] || Award;
+            const isFirst = idx === 0;
+            const isSecond = idx === 1;
 
             return (
               <Card
                 key={winner.participant_id}
                 onClick={() => handleOpenReview(winner.participant)}
                 className={cn(
-                  'p-5 flex flex-col justify-between relative overflow-hidden cursor-pointer hover:scale-[1.01] transition-transform',
-                  colors[idx]
+                  'podium-card p-5 flex flex-col justify-between relative overflow-hidden cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-all duration-200',
+                  isFirst && 'bg-neutral-900 text-white border-neutral-800 shadow-xl',
+                  isSecond && 'bg-gradient-to-br from-slate-100 via-zinc-200 to-slate-300 text-black border border-slate-300 shadow-md ring-1 ring-slate-400/30',
+                  !isFirst && !isSecond && 'bg-neutral-50 text-black border-neutral-200/90 shadow-sm'
                 )}
               >
                 <div>
@@ -265,37 +308,61 @@ export default function AdminResultsPage() {
                     <span
                       className={cn(
                         'text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md',
-                        idx === 0
-                          ? 'bg-neutral-800 text-neutral-200'
-                          : 'bg-neutral-200 text-neutral-700'
+                        isFirst && 'bg-neutral-800 text-white border border-neutral-700',
+                        isSecond && 'bg-slate-300 text-black border border-slate-400/60 shadow-2xs font-extrabold',
+                        !isFirst && !isSecond && 'bg-neutral-200 text-black border border-neutral-300 font-extrabold'
                       )}
                     >
                       {ranks[idx]}
                     </span>
-                    <Icon className={cn('w-4 h-4', idx === 0 ? 'text-amber-400' : 'text-neutral-400')} />
+                    <Icon
+                      className={cn(
+                        'w-4 h-4',
+                        isFirst && 'text-amber-400',
+                        isSecond && 'text-black',
+                        !isFirst && !isSecond && 'text-black'
+                      )}
+                    />
                   </div>
 
-                  <h3 className="text-lg font-bold mt-4 truncate">{winner.name}</h3>
+                  <h3
+                    className={cn(
+                      'text-lg font-bold mt-4 truncate',
+                      isFirst ? 'text-white' : 'text-black'
+                    )}
+                  >
+                    {winner.name}
+                  </h3>
                   <span
                     className={cn(
                       'text-xs font-mono-tabular',
-                      idx === 0 ? 'text-neutral-400' : 'text-neutral-500'
+                      isFirst ? 'text-neutral-300' : 'text-black font-medium'
                     )}
                   >
                     Phone: {winner.phone}
                   </span>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-neutral-200/20 flex items-baseline justify-between">
+                <div
+                  className={cn(
+                    'mt-6 pt-4 border-t flex items-baseline justify-between',
+                    isFirst ? 'border-neutral-800' : isSecond ? 'border-slate-300/90' : 'border-neutral-200'
+                  )}
+                >
                   <span
                     className={cn(
                       'text-xs font-medium',
-                      idx === 0 ? 'text-neutral-400' : 'text-neutral-500'
+                      isFirst ? 'text-neutral-300' : 'text-black font-semibold'
                     )}
                   >
                     Verified Score (+1 / 0)
                   </span>
-                  <span className="text-2xl font-bold font-mono-tabular">
+                  <span
+                    className={cn(
+                      'text-2xl font-bold font-mono-tabular',
+                      isFirst ? 'text-white' : 'text-black'
+                    )}
+                  >
                     {winner.score} / {winner.total_questions}
                   </span>
                 </div>
@@ -320,8 +387,8 @@ export default function AdminResultsPage() {
             />
           </div>
 
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-neutral-400 text-[11px] uppercase font-semibold">
+          <div className="flex items-center gap-2 text-xs overflow-x-auto max-w-full pb-1 sm:pb-0">
+            <span className="text-neutral-400 text-[11px] uppercase font-semibold shrink-0">
               Sort by:
             </span>
             {(['score', 'time', 'violations', 'status'] as const).map((field) => (
@@ -329,7 +396,7 @@ export default function AdminResultsPage() {
                 key={field}
                 onClick={() => handleSortToggle(field)}
                 className={cn(
-                  'px-2.5 py-1 rounded-lg capitalize font-medium inline-flex items-center gap-1 transition-colors',
+                  'px-2.5 py-1 rounded-lg capitalize font-medium inline-flex items-center gap-1 transition-colors shrink-0',
                   sortField === field
                     ? 'bg-neutral-900 text-white font-semibold'
                     : 'bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-100'
@@ -348,7 +415,7 @@ export default function AdminResultsPage() {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs sm:text-sm">
+          <table className="w-full min-w-[700px] text-left border-collapse text-xs sm:text-sm">
             <thead>
               <tr className="border-b border-neutral-200 bg-neutral-50/70 text-neutral-400 font-medium text-[11px] uppercase tracking-wider">
                 <th className="py-3.5 px-4 text-center">Rank</th>
@@ -412,8 +479,14 @@ export default function AdminResultsPage() {
                       onClick={() => handleOpenReview(item.participant)}
                       className="hover:bg-neutral-50/80 cursor-pointer transition-colors group"
                     >
-                      <td className="py-3.5 px-4 text-center font-bold font-mono-tabular text-neutral-900">
-                        #{idx + 1}
+                      <td className="py-3.5 px-4 text-center font-bold font-mono-tabular">
+                        {item.is_valid && item.rank ? (
+                          <span className="text-neutral-900">#{item.rank}</span>
+                        ) : (
+                          <span className="inline-block text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md text-[11px] font-bold border border-rose-200">
+                            DQ
+                          </span>
+                        )}
                       </td>
                       <td className="py-3.5 px-4">
                         <span className="font-semibold text-neutral-900 group-hover:text-neutral-950 block">
@@ -423,8 +496,15 @@ export default function AdminResultsPage() {
                       <td className="py-3.5 px-4 font-mono-tabular text-neutral-600 text-xs">
                         {item.phone}
                       </td>
-                      <td className="py-3.5 px-4 text-center font-mono-tabular font-bold text-neutral-900">
-                        {item.score} / {item.total_questions}
+                      <td className="py-3.5 px-4 text-center font-mono-tabular">
+                        {item.is_valid ? (
+                          <span className="font-bold text-neutral-900">{item.score} / {item.total_questions}</span>
+                        ) : (
+                          <div>
+                            <span className="line-through text-neutral-400 font-medium">{item.score} / {item.total_questions}</span>
+                            <span className="block text-[10px] text-rose-600 font-bold uppercase tracking-wider">Invalid</span>
+                          </div>
+                        )}
                       </td>
                       <td className="py-3.5 px-4 text-center font-mono-tabular text-neutral-700">
                         {item.percentage}%
@@ -455,13 +535,13 @@ export default function AdminResultsPage() {
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                        {item.integrity_status === 'Verified Clean' ? (
+                        {!item.is_valid ? (
+                          <Badge variant="danger" size="sm" dot>
+                            Disqualified
+                          </Badge>
+                        ) : item.integrity_status === 'Verified Clean' ? (
                           <Badge variant="success" size="sm" dot>
                             Verified Clean
-                          </Badge>
-                        ) : item.integrity_status === 'Audit Flagged' ? (
-                          <Badge variant="danger" size="sm" dot>
-                            Audit Flagged
                           </Badge>
                         ) : (
                           <Badge variant="warning" size="sm" dot>
@@ -473,7 +553,7 @@ export default function AdminResultsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={(e) => {
+                          onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                             e.stopPropagation();
                             handleOpenReview(item.participant);
                           }}

@@ -23,6 +23,7 @@ export interface CreateParticipantInput {
   name: string;
   phone: string;
   quiz_id: number;
+  total_questions?: number;
 }
 
 export interface QuestionReviewItem {

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ParticipantResult } from '@/types/participant';
-import { readJsonData, writeJsonData } from '@/lib/server/jsonStorage';
+import { readJsonData, updateJsonData } from '@/lib/server/jsonStorage';
 import resultsFallback from '@/data/results.json';
 
 export async function GET() {
@@ -14,24 +14,24 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const result: ParticipantResult = await request.json();
-    const results = await readJsonData<ParticipantResult[]>(
+
+    await updateJsonData<ParticipantResult[]>(
       'results.json',
-      resultsFallback as unknown as ParticipantResult[]
+      resultsFallback as unknown as ParticipantResult[],
+      (results) => {
+        const existingIdx = results.findIndex(
+          (r) => r.participant_id === result.participant_id && r.quiz_id === result.quiz_id
+        );
+
+        if (existingIdx !== -1) {
+          const copy = [...results];
+          copy[existingIdx] = result;
+          return copy;
+        } else {
+          return [result, ...results];
+        }
+      }
     );
-
-    const existingIdx = results.findIndex(
-      (r) => r.participant_id === result.participant_id && r.quiz_id === result.quiz_id
-    );
-
-    let updated: ParticipantResult[];
-    if (existingIdx !== -1) {
-      results[existingIdx] = result;
-      updated = [...results];
-    } else {
-      updated = [result, ...results];
-    }
-
-    await writeJsonData('results.json', updated);
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {

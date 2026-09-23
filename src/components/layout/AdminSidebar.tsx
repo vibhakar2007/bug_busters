@@ -10,8 +10,10 @@ import {
   Activity,
   Award,
   ArrowLeft,
+  LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { adminSignOut } from '@/components/admin/AdminAuthGuard';
 
 export const AdminSidebar: React.FC = () => {
   const pathname = usePathname();
@@ -61,13 +63,10 @@ export const AdminSidebar: React.FC = () => {
     <aside className="w-64 bg-neutral-50/50 border-r border-neutral-200/80 flex flex-col justify-between h-screen sticky top-0">
       {/* Brand Header */}
       <div>
-        <div className="h-16 px-6 flex items-center gap-3 border-b border-neutral-200/80">
-          <div className="w-8 h-8 bg-neutral-900 text-white rounded-xl flex items-center justify-center font-bold text-sm tracking-wider">
-            BB
-          </div>
+        <div className="h-16 px-6 flex items-center border-b border-neutral-200/80">
           <div className="flex flex-col">
-            <span className="font-semibold text-sm tracking-tight text-neutral-900 leading-tight">
-              BugBusters
+            <span className="font-bold text-base tracking-tight text-neutral-900 leading-tight">
+              Bug Busters
             </span>
             <span className="text-[11px] text-neutral-400 font-medium">
               Admin Console
@@ -117,8 +116,8 @@ export const AdminSidebar: React.FC = () => {
         </nav>
       </div>
 
-      {/* Footer Return CTA */}
-      <div className="p-4 border-t border-neutral-200/80">
+      {/* Footer Return & Sign Out CTA */}
+      <div className="p-3 border-t border-neutral-200/80 space-y-1">
         <Link
           href="/"
           className="flex items-center gap-2 text-xs font-medium text-neutral-500 hover:text-neutral-900 px-3 py-2 rounded-lg hover:bg-neutral-100 transition-colors"
@@ -126,6 +125,14 @@ export const AdminSidebar: React.FC = () => {
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Landing Page</span>
         </Link>
+
+        <button
+          onClick={() => adminSignOut()}
+          className="w-full flex items-center gap-2 text-xs font-medium text-neutral-500 hover:text-rose-600 px-3 py-2 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer text-left"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+          <span>Sign Out</span>
+        </button>
       </div>
     </aside>
   );

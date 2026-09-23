@@ -9,8 +9,10 @@
     "option_d": "Error",
     "correct_option": "B",
     "explanation": "In Python, assigning a list (y = x) creates a reference alias, not a copy. Modifying y with append(4) mutates the underlying list that x also references.",
-    "category": "Python",
-    "difficulty": "easy"
+    "category": "debugging",
+    "difficulty": "easy",
+    "language": "Python",
+    "question_type": "debug"
   },
   {
     "question_id": 2,
@@ -22,8 +24,10 @@
     "option_d": "3.0",
     "correct_option": "A",
     "explanation": "The // operator performs floor division in Python, discarding the fractional part and returning the largest integer less than or equal to 3.333..., which is 3.",
-    "category": "Python",
-    "difficulty": "easy"
+    "category": "debugging",
+    "difficulty": "easy",
+    "language": "Python",
+    "question_type": "debug"
   },
   {
     "question_id": 3,
@@ -35,8 +39,10 @@
     "option_d": "20",
     "correct_option": "B",
     "explanation": "Negative indexing counts from the end of the list. -1 is the last element (50), and -2 is the second-to-last element (40).",
-    "category": "Python",
-    "difficulty": "easy"
+    "category": "debugging",
+    "difficulty": "easy",
+    "language": "Python",
+    "question_type": "debug"
   },
   {
     "question_id": 4,
@@ -47,8 +53,10 @@
     "option_d": "Tuple",
     "correct_option": "D",
     "explanation": "Tuples are immutable sequences in Python; their elements cannot be modified, added, or removed after creation.",
-    "category": "Python",
-    "difficulty": "easy"
+    "category": "quiz",
+    "difficulty": "easy",
+    "language": "Python",
+    "question_type": "quiz"
   },
   {
     "question_id": 5,
@@ -60,8 +68,10 @@
     "option_d": "32",
     "correct_option": "C",
     "explanation": "The ** operator in Python computes exponentiation: 5 raised to the power of 2 is 25.",
-    "category": "Python",
-    "difficulty": "easy"
+    "category": "debugging",
+    "difficulty": "easy",
+    "language": "Python",
+    "question_type": "debug"
   },
   {
     "question_id": 6,
@@ -73,8 +83,10 @@
     "option_d": "Memory size",
     "correct_option": "B",
     "explanation": "When applied to a dictionary, len() returns the number of key-value pairs (which is equal to the number of unique keys).",
-    "category": "Python",
-    "difficulty": "easy"
+    "category": "debugging",
+    "difficulty": "easy",
+    "language": "Python",
+    "question_type": "debug"
   },
   {
     "question_id": 7,
@@ -86,8 +98,10 @@
     "option_d": "yth",
     "correct_option": "B",
     "explanation": "String slicing [start:stop] starts at index 1 ('y') up to but not including index 5 ('n'), producing 'ytho'.",
-    "category": "Python",
-    "difficulty": "easy"
+    "category": "debugging",
+    "difficulty": "easy",
+    "language": "Python",
+    "question_type": "debug"
   },
   {
     "question_id": 8,
@@ -98,8 +112,10 @@
     "option_d": "def",
     "correct_option": "B",
     "explanation": "The lambda keyword defines small, anonymous inline functions in Python.",
-    "category": "Python",
-    "difficulty": "easy"
+    "category": "quiz",
+    "difficulty": "easy",
+    "language": "Python",
+    "question_type": "quiz"
   },
   {
     "question_id": 9,
@@ -111,8 +127,10 @@
     "option_d": "15",
     "correct_option": "C",
     "explanation": "Since x = 10 is strictly greater than 5, the if branch executes: x += 2 results in 12.",
-    "category": "Python",
-    "difficulty": "easy"
+    "category": "debugging",
+    "difficulty": "easy",
+    "language": "Python",
+    "question_type": "debug"
   },
   {
     "question_id": 10,
@@ -124,8 +142,10 @@
     "option_d": "Error",
     "correct_option": "A",
     "explanation": "a.copy() creates a shallow copy of list a. Modifying b does not alter the original list a.",
-    "category": "Python",
-    "difficulty": "easy"
+    "category": "debugging",
+    "difficulty": "easy",
+    "language": "Python",
+    "question_type": "debug"
   },
   {
     "question_id": 11,
@@ -136,8 +156,10 @@
     "option_d": "Compares data types only",
     "correct_option": "B",
     "explanation": "The 'is' operator checks identity (whether two references point to the exact same memory object, id(a) == id(b)), whereas '==' checks equality of values.",
-    "category": "Python",
-    "difficulty": "easy"
+    "category": "quiz",
+    "difficulty": "easy",
+    "language": "Python",
+    "question_type": "quiz"
   },
   {
     "question_id": 12,
@@ -149,8 +171,10 @@
     "option_d": "Error",
     "correct_option": "C",
     "explanation": "Calling test(5) assigns a = 5 and uses the default parameter b = 10, returning 5 + 10 = 15.",
-    "category": "Python",
-    "difficulty": "easy"
+    "category": "debugging",
+    "difficulty": "easy",
+    "language": "Python",
+    "question_type": "debug"
   },
   {
     "question_id": 13,
@@ -161,8 +185,10 @@
     "option_d": "None of these",
     "correct_option": "C",
     "explanation": "Lists are ordered collections that permit duplicate elements, whereas Sets and Dictionary keys enforce uniqueness.",
-    "category": "Python",
-    "difficulty": "easy"
+    "category": "quiz",
+    "difficulty": "easy",
+    "language": "Python",
+    "question_type": "quiz"
   },
   {
     "question_id": 14,
@@ -174,8 +200,10 @@
     "option_d": "Error",
     "correct_option": "B",
     "explanation": "The slice step of -1 reverses the sequence, producing [4, 3, 2, 1].",
-    "category": "Python",
-    "difficulty": "easy"
+    "category": "debugging",
+    "difficulty": "easy",
+    "language": "Python",
+    "question_type": "debug"
   },
   {
     "question_id": 15,
@@ -186,8 +214,10 @@
     "option_d": "super",
     "correct_option": "C",
     "explanation": "In Java, a class inherits from another class using the 'extends' keyword ('implements' is used for interfaces).",
-    "category": "Java",
-    "difficulty": "easy"
+    "category": "quiz",
+    "difficulty": "easy",
+    "language": "Java",
+    "question_type": "quiz"
   },
   {
     "question_id": 16,
@@ -199,8 +229,10 @@
     "option_d": "Error",
     "correct_option": "B",
     "explanation": "The postfix increment operator x++ evaluates to the current value (5) before incrementing x to 6.",
-    "category": "Java",
-    "difficulty": "easy"
+    "category": "debugging",
+    "difficulty": "easy",
+    "language": "Java",
+    "question_type": "debug"
   },
   {
     "question_id": 17,
@@ -212,8 +244,10 @@
     "option_d": "10",
     "correct_option": "A",
     "explanation": "Multiplication has higher precedence than addition: 3 * 2 = 6, and x += 6 results in 5 + 6 = 11.",
-    "category": "Java",
-    "difficulty": "easy"
+    "category": "debugging",
+    "difficulty": "easy",
+    "language": "Java",
+    "question_type": "debug"
   },
   {
     "question_id": 18,
@@ -224,8 +258,10 @@
     "option_d": "char",
     "correct_option": "C",
     "explanation": "String is a class (reference type) in Java, whereas int, float, and char are primitive types.",
-    "category": "Java",
-    "difficulty": "easy"
+    "category": "quiz",
+    "difficulty": "easy",
+    "language": "Java",
+    "question_type": "quiz"
   },
   {
     "question_id": 19,
@@ -237,8 +273,10 @@
     "option_d": "Compilation error",
     "correct_option": "A",
     "explanation": "String literals are interned in Java's string constant pool, so a and b reference the exact same memory address, making a == b evaluate to true.",
-    "category": "Java",
-    "difficulty": "medium"
+    "category": "debugging",
+    "difficulty": "medium",
+    "language": "Java",
+    "question_type": "debug"
   },
   {
     "question_id": 20,
@@ -249,8 +287,10 @@
     "option_d": "execute()",
     "correct_option": "C",
     "explanation": "The JVM invokes public static void main(String[] args) as the starting point of any standalone Java application.",
-    "category": "Java",
-    "difficulty": "easy"
+    "category": "quiz",
+    "difficulty": "easy",
+    "language": "Java",
+    "question_type": "quiz"
   },
   {
     "question_id": 21,
@@ -261,8 +301,10 @@
     "option_d": "const",
     "correct_option": "B",
     "explanation": "Declaring a method with the 'final' keyword in Java prevents subclasses from overriding it.",
-    "category": "Java",
-    "difficulty": "easy"
+    "category": "quiz",
+    "difficulty": "easy",
+    "language": "Java",
+    "question_type": "quiz"
   },
   {
     "question_id": 22,
@@ -273,8 +315,10 @@
     "option_d": "Hiding a method",
     "correct_option": "A",
     "explanation": "Method overloading allows multiple methods within the same class to share the same name provided their argument lists (types or count) differ.",
-    "category": "Java",
-    "difficulty": "easy"
+    "category": "quiz",
+    "difficulty": "easy",
+    "language": "Java",
+    "question_type": "quiz"
   },
   {
     "question_id": 23,
@@ -286,8 +330,10 @@
     "option_d": "3.0",
     "correct_option": "A",
     "explanation": "Integer division in Java truncates the decimal portion, so 10 / 3 results in integer 3.",
-    "category": "Java",
-    "difficulty": "easy"
+    "category": "debugging",
+    "difficulty": "easy",
+    "language": "Java",
+    "question_type": "debug"
   },
   {
     "question_id": 24,
@@ -298,8 +344,10 @@
     "option_d": "Packages",
     "correct_option": "B",
     "explanation": "Java does not support multiple inheritance with classes to avoid ambiguity (the diamond problem), but allows a class to implement multiple interfaces.",
-    "category": "Java",
-    "difficulty": "medium"
+    "category": "quiz",
+    "difficulty": "medium",
+    "language": "Java",
+    "question_type": "quiz"
   },
   {
     "question_id": 25,
@@ -310,8 +358,10 @@
     "option_d": "Main method",
     "correct_option": "B",
     "explanation": "In Java and C++, 'this' is a reference to the current object instance within an instance method or constructor.",
-    "category": "Java",
-    "difficulty": "easy"
+    "category": "quiz",
+    "difficulty": "easy",
+    "language": "Java",
+    "question_type": "quiz"
   },
   {
     "question_id": 26,
@@ -322,8 +372,10 @@
     "option_d": "Create an interface",
     "correct_option": "B",
     "explanation": "Constructors are special member functions called automatically when an object is instantiated to initialize its state.",
-    "category": "Java",
-    "difficulty": "easy"
+    "category": "quiz",
+    "difficulty": "easy",
+    "language": "Java",
+    "question_type": "quiz"
   },
   {
     "question_id": 27,
@@ -334,8 +386,10 @@
     "option_d": "NumberFormatException",
     "correct_option": "B",
     "explanation": "Dividing an integer by 0 at runtime in Java throws java.lang.ArithmeticException: / by zero.",
-    "category": "Java",
-    "difficulty": "easy"
+    "category": "quiz",
+    "difficulty": "easy",
+    "language": "Java",
+    "question_type": "quiz"
   },
   {
     "question_id": 28,
@@ -347,8 +401,10 @@
     "option_d": "Error",
     "correct_option": "A",
     "explanation": "In C, integer division 5 / 2 truncates toward zero, resulting in 2.",
-    "category": "C",
-    "difficulty": "easy"
+    "category": "debugging",
+    "difficulty": "easy",
+    "language": "C",
+    "question_type": "debug"
   },
   {
     "question_id": 29,
@@ -359,8 +415,10 @@
     "option_d": "%",
     "correct_option": "B",
     "explanation": "The ampersand (&) is the address-of operator in C/C++, returning the memory address of a variable.",
-    "category": "C",
-    "difficulty": "easy"
+    "category": "quiz",
+    "difficulty": "easy",
+    "language": "C",
+    "question_type": "quiz"
   },
   {
     "question_id": 30,
@@ -371,8 +429,10 @@
     "option_d": "Function name only",
     "correct_option": "B",
     "explanation": "A pointer is a variable that stores the memory address of another variable or resource.",
-    "category": "C",
-    "difficulty": "easy"
+    "category": "quiz",
+    "difficulty": "easy",
+    "language": "C",
+    "question_type": "quiz"
   },
   {
     "question_id": 31,
@@ -384,8 +444,10 @@
     "option_d": "Error",
     "correct_option": "B",
     "explanation": "x++ evaluates to the current value (10) before incrementing x to 11.",
-    "category": "C",
-    "difficulty": "easy"
+    "category": "debugging",
+    "difficulty": "easy",
+    "language": "C",
+    "question_type": "debug"
   },
   {
     "question_id": 32,
@@ -396,8 +458,10 @@
     "option_d": "*int p;",
     "correct_option": "C",
     "explanation": "In C, 'int *p;' declares p as a pointer to an integer.",
-    "category": "C",
-    "difficulty": "easy"
+    "category": "quiz",
+    "difficulty": "easy",
+    "language": "C",
+    "question_type": "quiz"
   },
   {
     "question_id": 33,
@@ -409,8 +473,10 @@
     "option_d": "Nothing",
     "correct_option": "A",
     "explanation": "Since 5 > 3 is true, the if branch executes and prints 'A'.",
-    "category": "C",
-    "difficulty": "easy"
+    "category": "debugging",
+    "difficulty": "easy",
+    "language": "C",
+    "question_type": "debug"
   },
   {
     "question_id": 34,
@@ -421,8 +487,10 @@
     "option_d": "new()",
     "correct_option": "B",
     "explanation": "malloc() (memory allocation) in <stdlib.h> allocates a contiguous block of bytes on the heap.",
-    "category": "C",
-    "difficulty": "easy"
+    "category": "quiz",
+    "difficulty": "easy",
+    "language": "C",
+    "question_type": "quiz"
   },
   {
     "question_id": 35,
@@ -433,8 +501,10 @@
     "option_d": "Address of an integer",
     "correct_option": "C",
     "explanation": "The sizeof operator returns the size in bytes required to store an instance of the specified type.",
-    "category": "C",
-    "difficulty": "easy"
+    "category": "quiz",
+    "difficulty": "easy",
+    "language": "C",
+    "question_type": "quiz"
   },
   {
     "question_id": 36,
@@ -446,8 +516,10 @@
     "option_d": "Error",
     "correct_option": "B",
     "explanation": "The dereference operator *p accesses the value stored at the address pointed to by p, which is 10.",
-    "category": "C",
-    "difficulty": "easy"
+    "category": "debugging",
+    "difficulty": "easy",
+    "language": "C",
+    "question_type": "debug"
   },
   {
     "question_id": 37,
@@ -458,8 +530,10 @@
     "option_d": "&",
     "correct_option": "C",
     "explanation": "The arrow operator (->) dereferences the pointer and accesses the structure member (equivalent to (*ptr).member).",
-    "category": "C",
-    "difficulty": "medium"
+    "category": "quiz",
+    "difficulty": "medium",
+    "language": "C",
+    "question_type": "quiz"
   },
   {
     "question_id": 38,
@@ -470,8 +544,10 @@
     "option_d": "All three",
     "correct_option": "C",
     "explanation": "C relies on manual heap management with malloc() and free(), whereas Python and Java use automatic garbage collection.",
-    "category": "Cross-Language",
-    "difficulty": "easy"
+    "category": "quiz",
+    "difficulty": "easy",
+    "language": "General",
+    "question_type": "quiz"
   },
   {
     "question_id": 39,
@@ -482,8 +558,10 @@
     "option_d": "All three are dynamically typed",
     "correct_option": "C",
     "explanation": "Python checks types dynamically at runtime, whereas C and Java are statically typed, checking types at compile time.",
-    "category": "Cross-Language",
-    "difficulty": "easy"
+    "category": "quiz",
+    "difficulty": "easy",
+    "language": "General",
+    "question_type": "quiz"
   },
   {
     "question_id": 40,
@@ -494,7 +572,9 @@
     "option_d": "Python → malloc(), Java → pointers, C → garbage collection",
     "correct_option": "A",
     "explanation": "Python features anonymous lambda functions, Java uses the extends keyword for class inheritance, and C utilizes explicit pointers for low-level memory addressing.",
-    "category": "Cross-Language",
-    "difficulty": "easy"
+    "category": "quiz",
+    "difficulty": "easy",
+    "language": "General",
+    "question_type": "quiz"
   }
 ]

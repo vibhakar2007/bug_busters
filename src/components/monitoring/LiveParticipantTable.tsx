@@ -133,13 +133,13 @@ export const LiveParticipantTable: React.FC<LiveParticipantTableProps> = ({
         </div>
 
         {/* Filter buttons */}
-        <div className="flex items-center gap-1.5 p-1 bg-neutral-100 rounded-xl text-xs font-medium self-start sm:self-auto">
+        <div className="flex items-center gap-1.5 p-1 bg-neutral-100 rounded-xl text-xs font-medium self-start sm:self-auto overflow-x-auto max-w-full">
           {(['all', 'active', 'flagged', 'completed'] as const).map((filter) => (
             <button
               key={filter}
               onClick={() => setStatusFilter(filter)}
               className={cn(
-                'px-3 py-1.5 rounded-lg capitalize transition-all',
+                'px-3 py-1.5 rounded-lg capitalize transition-all whitespace-nowrap',
                 statusFilter === filter
                   ? 'bg-white text-neutral-900 shadow-xs font-semibold'
                   : 'text-neutral-500 hover:text-neutral-900'
@@ -152,8 +152,8 @@ export const LiveParticipantTable: React.FC<LiveParticipantTableProps> = ({
       </div>
 
       {/* Table list */}
-      <div className="overflow-x-auto mt-2">
-        <table className="w-full text-left border-collapse text-xs sm:text-sm">
+      <div className="overflow-x-auto mt-2 -mx-2 sm:mx-0 px-2 sm:px-0">
+        <table className="w-full min-w-[680px] text-left border-collapse text-xs sm:text-sm">
           <thead>
             <tr className="border-b border-neutral-200 text-neutral-400 font-medium text-[11px] uppercase tracking-wider">
               <th className="py-3 px-3">Participant</th>

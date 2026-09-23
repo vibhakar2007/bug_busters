@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ParticipantActivity, RecordActivityInput } from '@/types/activity';
-import { readJsonData, writeJsonData } from '@/lib/server/jsonStorage';
+import { readJsonData, updateJsonData } from '@/lib/server/jsonStorage';
 import activityFallback from '@/data/activity.json';
 
 export async function GET() {
@@ -14,10 +14,6 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const input: RecordActivityInput = await request.json();
-    const activities = await readJsonData<ParticipantActivity[]>(
-      'activity.json',
-      activityFallback as unknown as ParticipantActivity[]
-    );
 
     const isViolation =
       input.event_type === 'tab_switch' ||
@@ -26,26 +22,36 @@ export async function POST(request: Request) {
     const isWarning =
       input.event_type === 'focus_loss' || input.event_type === 'fullscreen_exit';
 
-    const nextId =
-      activities.length > 0 ? Math.max(...activities.map((a) => a.activity_id)) + 1 : 1;
+    let recordedActivity: ParticipantActivity | null = null;
 
-    const newActivity: ParticipantActivity = {
-      activity_id: nextId,
-      participant_id: input.participant_id,
-      participant_name: input.participant_name,
-      registration_number: input.registration_number,
-      question_id: input.question_id || null,
-      event_type: input.event_type,
-      selected_option: input.selected_option || null,
-      event_time: new Date().toISOString(),
-      details: input.details || '',
-      severity: isViolation ? 'violation' : isWarning ? 'warning' : 'normal',
-    };
+    await updateJsonData<ParticipantActivity[]>(
+      'activity.json',
+      activityFallback as unknown as ParticipantActivity[],
+      (activities) => {
+        const nextId =
+          activities.length > 0
+            ? Math.max(...activities.map((a) => a.activity_id)) + 1
+            : 1;
 
-    const updated = [newActivity, ...activities.slice(0, 99)];
-    await writeJsonData('activity.json', updated);
+        const newActivity: ParticipantActivity = {
+          activity_id: nextId,
+          participant_id: input.participant_id,
+          participant_name: input.participant_name,
+          registration_number: input.registration_number,
+          question_id: input.question_id || null,
+          event_type: input.event_type,
+          selected_option: input.selected_option || null,
+          event_time: new Date().toISOString(),
+          details: input.details || '',
+          severity: isViolation ? 'violation' : isWarning ? 'warning' : 'normal',
+        };
 
-    return NextResponse.json(newActivity, { status: 201 });
+        recordedActivity = newActivity;
+        return [newActivity, ...activities.slice(0, 99)];
+      }
+    );
+
+    return NextResponse.json(recordedActivity, { status: 201 });
   } catch (error) {
     console.error('Failed to record activity:', error);
     return NextResponse.json({ error: 'Failed to record activity' }, { status: 500 });

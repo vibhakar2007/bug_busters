@@ -4,7 +4,8 @@ import { QuizSession } from '@/types/quiz';
 import { quizService } from '@/lib/api/quizService';
 import { participantService } from '@/lib/api/participantService';
 import { activityService } from '@/lib/api/activityService';
-import { createOrRestoreQuizSession, saveQuizSession, updateSessionDuration } from '@/lib/quiz/sessionEngine';
+import { questionService } from '@/lib/api/questionService';
+import { createOrRestoreQuizSession, saveQuizSession, updateSessionDuration, randomizeQuestionOptions } from '@/lib/quiz/sessionEngine';
 import { calculateQuizResult } from '@/lib/quiz/scoring';
 import { realtimeBus } from '@/lib/api/eventBus';
 
@@ -32,9 +33,17 @@ export function useQuiz({ quizCode, phone }: UseQuizProps) {
     setIsSubmitting(true);
 
     try {
+      // Ensure we fetch latest participant state to guarantee accurate violation counts
+      const latestParticipant = await participantService.getParticipant(currentSession.participant_id);
+      const exactViolations = Math.max(
+        latestParticipant?.violation_count ?? 0,
+        currentSession.violationCount ?? 0
+      );
+
       const submissionTime = new Date().toISOString();
       const finalizedSession: QuizSession = {
         ...currentSession,
+        violationCount: exactViolations,
         isSubmitted: true,
         submittedAt: submissionTime,
       };
@@ -52,11 +61,12 @@ export function useQuiz({ quizCode, phone }: UseQuizProps) {
       // Record result in participant service repository for admin review
       await participantService.recordResult(result);
 
-      // Update participant status in mock DB
+      // Update participant status in DB preserving exact violation count
       await participantService.updateParticipant(currentSession.participant_id, {
         status: 'completed',
         end_time: submissionTime,
         score: result.score,
+        violation_count: exactViolations,
         last_activity_description: `Quiz submitted (${result.score}/${result.total_questions})`,
       });
 
@@ -181,84 +191,147 @@ export function useQuiz({ quizCode, phone }: UseQuizProps) {
   }, [submitQuiz]);
 
   // Answer selection
-  const selectOption = useCallback(
-    async (optionKey: string) => {
-      if (!session || session.isSubmitted) return;
+  const selectOption = useCallback((optionKey: string) => {
+    const current = sessionRef.current;
+    if (!current || current.isSubmitted) return;
 
-      const currentQ = session.questions[session.currentQuestionIndex];
-      if (!currentQ) return;
+    const currentQ = current.questions[current.currentQuestionIndex];
+    if (!currentQ) return;
 
-      const updatedAnswers = {
-        ...session.answers,
-        [currentQ.question_id]: optionKey.toUpperCase(),
+    const normKey = optionKey.trim().toUpperCase();
+    const updatedAnswers = {
+      ...current.answers,
+      [currentQ.question_id]: normKey,
+    };
+
+    const updatedSession: QuizSession = {
+      ...current,
+      answers: updatedAnswers,
+    };
+
+    setSession(updatedSession);
+    saveQuizSession(updatedSession);
+
+    // Record answer activity asynchronously without blocking UI
+    activityService
+      .recordActivity({
+        participant_id: current.participant_id,
+        participant_name: current.participant_name,
+        registration_number: current.phone,
+        question_id: currentQ.question_id,
+        event_type: 'answer_selected',
+        selected_option: normKey,
+        details: `Answered Question #${current.currentQuestionIndex + 1} (Option ${normKey})`,
+      })
+      .catch((err) => console.warn('Failed to record activity:', err));
+
+    // Update participant progress in background
+    participantService
+      .updateParticipant(current.participant_id, {
+        current_question: current.currentQuestionIndex + 1,
+        last_activity_description: `Answered Question ${current.currentQuestionIndex + 1}`,
+      })
+      .catch((err) => console.warn('Failed to update participant progress:', err));
+  }, []);
+
+  // Navigation
+  const goToNext = useCallback(() => {
+    const current = sessionRef.current;
+    if (!current) return;
+    if (current.currentQuestionIndex < current.questions.length - 1) {
+      const updated: QuizSession = {
+        ...current,
+        currentQuestionIndex: current.currentQuestionIndex + 1,
       };
+      setSession(updated);
+      saveQuizSession(updated);
+    }
+  }, []);
+
+  const goToPrevious = useCallback(() => {
+    const current = sessionRef.current;
+    if (!current) return;
+    if (current.currentQuestionIndex > 0) {
+      const updated: QuizSession = {
+        ...current,
+        currentQuestionIndex: current.currentQuestionIndex - 1,
+      };
+      setSession(updated);
+      saveQuizSession(updated);
+    }
+  }, []);
+
+  const goToQuestion = useCallback((index: number) => {
+    const current = sessionRef.current;
+    if (!current) return;
+    if (index >= 0 && index < current.questions.length) {
+      const updated: QuizSession = {
+        ...current,
+        currentQuestionIndex: index,
+      };
+      setSession(updated);
+      saveQuizSession(updated);
+    }
+  }, []);
+
+  const syncViolationCount = useCallback((count?: number) => {
+    const current = sessionRef.current;
+    if (!current) return;
+    const newCount = count !== undefined ? count : (current.violationCount || 0) + 1;
+    const updated = { ...current, violationCount: newCount };
+    setSession(updated);
+    saveQuizSession(updated);
+  }, []);
+
+  const switchDebugLanguage = useCallback(
+    async (targetLanguage: string) => {
+      const current = sessionRef.current;
+      if (!current || current.isSubmitted) return;
+
+      const currentQ = current.questions[current.currentQuestionIndex];
+      if (!currentQ || currentQ.question_type !== 'debug') return;
+
+      if ((currentQ.language || '').trim().toLowerCase() === targetLanguage.trim().toLowerCase()) {
+        return;
+      }
+
+      const debugPool = await questionService.getDebugQuestionsByLanguage(targetLanguage);
+      if (debugPool.length === 0) return;
+
+      const existingIds = new Set(current.questions.map((q) => q.question_id));
+      const unusedInLanguage = debugPool.filter((q) => !existingIds.has(q.question_id));
+      const candidatePool = unusedInLanguage.length > 0 ? unusedInLanguage : debugPool;
+
+      const selectedNewQ = candidatePool[Math.floor(Math.random() * candidatePool.length)];
+      const newSessionQ = randomizeQuestionOptions(selectedNewQ);
+
+      const updatedQuestions = [...current.questions];
+      updatedQuestions[current.currentQuestionIndex] = newSessionQ;
+
+      const updatedAnswers = { ...current.answers };
+      delete updatedAnswers[currentQ.question_id];
 
       const updatedSession: QuizSession = {
-        ...session,
+        ...current,
+        questions: updatedQuestions,
         answers: updatedAnswers,
       };
 
       setSession(updatedSession);
       saveQuizSession(updatedSession);
 
-      // Record answer activity asynchronously
-      activityService.recordActivity({
-        participant_id: session.participant_id,
-        participant_name: session.participant_name,
-        registration_number: session.phone,
-        question_id: currentQ.question_id,
-        event_type: 'answer_selected',
-        selected_option: optionKey.toUpperCase(),
-        details: `Answered Question #${session.currentQuestionIndex + 1} (Option ${optionKey.toUpperCase()})`,
-      });
-
-      // Update participant progress in background
-      participantService.updateParticipant(session.participant_id, {
-        current_question: session.currentQuestionIndex + 1,
-        last_activity_description: `Answered Question ${session.currentQuestionIndex + 1}`,
-      });
+      activityService
+        .recordActivity({
+          participant_id: current.participant_id,
+          participant_name: current.participant_name,
+          registration_number: current.phone,
+          question_id: newSessionQ.question_id,
+          event_type: 'answer_selected',
+          details: `Switched Question #${current.currentQuestionIndex + 1} language to ${targetLanguage}`,
+        })
+        .catch((err) => console.warn('Failed recording switch language:', err));
     },
-    [session]
-  );
-
-  // Navigation
-  const goToNext = useCallback(() => {
-    if (!session) return;
-    if (session.currentQuestionIndex < session.questions.length - 1) {
-      const updated: QuizSession = {
-        ...session,
-        currentQuestionIndex: session.currentQuestionIndex + 1,
-      };
-      setSession(updated);
-      saveQuizSession(updated);
-    }
-  }, [session]);
-
-  const goToPrevious = useCallback(() => {
-    if (!session) return;
-    if (session.currentQuestionIndex > 0) {
-      const updated: QuizSession = {
-        ...session,
-        currentQuestionIndex: session.currentQuestionIndex - 1,
-      };
-      setSession(updated);
-      saveQuizSession(updated);
-    }
-  }, [session]);
-
-  const goToQuestion = useCallback(
-    (index: number) => {
-      if (!session) return;
-      if (index >= 0 && index < session.questions.length) {
-        const updated: QuizSession = {
-          ...session,
-          currentQuestionIndex: index,
-        };
-        setSession(updated);
-        saveQuizSession(updated);
-      }
-    },
-    [session]
+    []
   );
 
   const currentQuestion = session ? session.questions[session.currentQuestionIndex] : null;
@@ -286,5 +359,7 @@ export function useQuiz({ quizCode, phone }: UseQuizProps) {
     goToPrevious,
     goToQuestion,
     submitQuiz,
+    syncViolationCount,
+    switchDebugLanguage,
   };
 }

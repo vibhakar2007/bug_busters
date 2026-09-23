@@ -78,7 +78,7 @@ export default function QuizManagementPage() {
             Quiz Management
           </h1>
           <p className="text-xs sm:text-sm text-neutral-500 mt-1">
-            Configure symposium quiz rounds, question sets, duration timers, and live admission codes.
+            Create, configure, and manage active quizzes.
           </p>
         </div>
 
@@ -93,7 +93,7 @@ export default function QuizManagementPage() {
       {/* Quizzes Table / Card List */}
       <Card className="p-0 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs sm:text-sm">
+          <table className="w-full min-w-[650px] text-left border-collapse text-xs sm:text-sm">
             <thead>
               <tr className="border-b border-neutral-200 bg-neutral-50/70 text-neutral-400 font-medium text-[11px] uppercase tracking-wider">
                 <th className="py-3.5 px-6">Quiz Title</th>

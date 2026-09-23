@@ -34,11 +34,16 @@ export function randomizeQuestionOptions(q: Question): SessionQuestion {
     displayLabel: DISPLAY_LETTERS[index] || 'A',
   }));
 
+  const hasCode = Boolean(q.code_snippet && q.code_snippet.trim().length > 0);
+  const qType = q.question_type || (hasCode ? 'debug' : 'quiz');
+
   return {
     question_id: q.question_id,
     question: q.question,
     code_snippet: q.code_snippet,
-    category: q.category,
+    category: q.category || (qType === 'debug' ? 'debugging' : 'quiz'),
+    language: q.language || 'General',
+    question_type: qType,
     options,
     correct_option: q.correct_option.toUpperCase(),
     explanation: q.explanation || 'No explanation provided.',
@@ -58,15 +63,21 @@ export async function createOrRestoreQuizSession(
         const session: QuizSession = JSON.parse(existing);
         // Validate if it's the exact same quiz and participant
         if (session.quiz_id === quiz.quiz_id && session.participant_id === participant.participant_id) {
-          // Check if duration was updated in quiz since session was created
-          if (quiz.duration_minutes !== session.durationMinutes) {
-            const startMs = new Date(session.startTime).getTime();
-            const updatedEndMs = startMs + quiz.duration_minutes * 60 * 1000;
-            session.durationMinutes = quiz.duration_minutes;
-            session.endTimeExpected = new Date(updatedEndMs).toISOString();
-            saveQuizSession(session);
+          const now = Date.now();
+          const endMs = new Date(session.endTimeExpected).getTime();
+
+          // Only restore an unsubmitted session that has not expired
+          if (!session.isSubmitted && now < endMs) {
+            // Check if duration was updated in quiz since session was created
+            if (quiz.duration_minutes !== session.durationMinutes) {
+              const startMs = new Date(session.startTime).getTime();
+              const updatedEndMs = startMs + quiz.duration_minutes * 60 * 1000;
+              session.durationMinutes = quiz.duration_minutes;
+              session.endTimeExpected = new Date(updatedEndMs).toISOString();
+              saveQuizSession(session);
+            }
+            return session;
           }
-          return session;
         }
       }
     } catch (e) {

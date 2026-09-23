@@ -57,10 +57,10 @@ export default function AdminDashboardPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900">
-            Symposium Overview
+            Overview
           </h1>
           <p className="text-xs sm:text-sm text-neutral-500 mt-1">
-            Real-time status, active participant telemetries, and symposium test administration.
+            Real-time status and participant tracking.
           </p>
         </div>
 

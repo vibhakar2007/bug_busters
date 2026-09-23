@@ -25,7 +25,7 @@ class ParticipantService {
     }
   }
 
-  private async syncFromServer() {
+  public async syncFromServer(): Promise<void> {
     try {
       const [pRes, rRes] = await Promise.all([
         fetch('/api/participants'),
@@ -34,7 +34,7 @@ class ParticipantService {
 
       if (pRes.ok) {
         const pData: Participant[] = await pRes.json();
-        if (Array.isArray(pData) && pData.length > 0) {
+        if (Array.isArray(pData)) {
           this.participants = pData;
           this.saveParticipantsToLocal();
           realtimeBus.emit('participants_updated', this.participants);
@@ -43,7 +43,7 @@ class ParticipantService {
 
       if (rRes.ok) {
         const rData: ParticipantResult[] = await rRes.json();
-        if (Array.isArray(rData) && rData.length > 0) {
+        if (Array.isArray(rData)) {
           this.results = rData;
           this.saveResultsToLocal();
         }
@@ -65,7 +65,7 @@ class ParticipantService {
         console.warn('Failed to read participants from storage:', e);
       }
     }
-    this.participants = [...MOCK_PARTICIPANTS];
+    this.participants = [];
   }
 
   private saveParticipantsToLocal() {
@@ -95,7 +95,7 @@ class ParticipantService {
         console.warn('Failed to read results from storage:', e);
       }
     }
-    this.results = [...MOCK_RESULTS];
+    this.results = [];
   }
 
   private saveResultsToLocal() {
@@ -113,7 +113,11 @@ class ParticipantService {
   }
 
   public async getAllParticipants(): Promise<Participant[]> {
-    this.loadParticipants();
+    if (typeof window !== 'undefined') {
+      await this.syncFromServer();
+    } else {
+      this.loadParticipants();
+    }
     return [...this.participants];
   }
 
@@ -144,6 +148,10 @@ class ParticipantService {
       if (existing.status === 'completed') {
         throw new Error('You have already completed this quiz with this phone number. Re-attempts are not permitted.');
       }
+      if (input.name && input.name.trim() && existing.name !== input.name.trim()) {
+        existing.name = input.name.trim();
+        this.saveParticipants();
+      }
       return existing;
     }
 
@@ -163,7 +171,7 @@ class ParticipantService {
       status: 'active',
       violation_count: 0,
       current_question: 1,
-      total_questions: 10,
+      total_questions: input.total_questions || 5,
       last_activity_time: new Date().toISOString(),
       last_activity_description: 'Started the quiz',
     };
@@ -295,7 +303,11 @@ class ParticipantService {
   }
 
   public async getResults(quizId?: number): Promise<ParticipantResult[]> {
-    this.loadResults();
+    if (typeof window !== 'undefined') {
+      await this.syncFromServer();
+    } else {
+      this.loadResults();
+    }
     if (quizId) {
       return this.results.filter((r) => r.quiz_id === quizId);
     }

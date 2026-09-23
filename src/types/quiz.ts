@@ -2,6 +2,8 @@ export type CorrectOption = 'A' | 'B' | 'C' | 'D' | 'a' | 'b' | 'c' | 'd';
 
 export type QuizStatus = 'draft' | 'live' | 'closed';
 
+export type QuestionType = 'quiz' | 'debug';
+
 /**
  * Maps directly to Supabase TABLE: questions & /data/questions.json
  */
@@ -15,7 +17,9 @@ export interface Question {
   option_d: string;
   correct_option: string; // 'A' | 'B' | 'C' | 'D'
   explanation: string;
-  category?: string;
+  category?: string; // 'quiz' | 'debugging'
+  language?: string; // 'Python' | 'Java' | 'C' | 'General'
+  question_type?: QuestionType; // 'quiz' | 'debug'
   difficulty?: 'easy' | 'medium' | 'hard';
 }
 
@@ -72,6 +76,8 @@ export interface SessionQuestion {
   question: string;
   code_snippet?: string;
   category?: string;
+  language?: string;
+  question_type: QuestionType; // 'quiz' | 'debug'
   options: RandomizedOption[];
   correct_option: string; // 'A' | 'B' | 'C' | 'D'
   explanation: string;

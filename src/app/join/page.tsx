@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { quizService } from '@/lib/api/quizService';
 import { participantService } from '@/lib/api/participantService';
 import { animatePageEntrance } from '@/animations/gsap';
-import { ArrowLeft, Shield, AlertCircle, Sparkles, Check } from 'lucide-react';
+import { ArrowLeft, Shield, AlertCircle } from 'lucide-react';
 
 export default function JoinPage() {
   const router = useRouter();
@@ -93,10 +93,12 @@ export default function JoinPage() {
         name: cleanName,
         phone: cleanPhone,
         quiz_id: quiz.quiz_id,
+        total_questions: quiz.question_count,
       });
 
       // 4. Save active keys for session restoration in browser
       if (typeof window !== 'undefined') {
+        localStorage.removeItem('bugbusters_latest_result');
         localStorage.setItem('bugbusters_active_quiz_code', cleanCode);
         localStorage.setItem('bugbusters_active_phone', cleanPhone);
         localStorage.setItem('bugbusters_active_participant_id', String(participant.participant_id));
@@ -110,13 +112,6 @@ export default function JoinPage() {
       setError(msg);
       setIsLoading(false);
     }
-  };
-
-  const applyPreset = (code: string, sampleName: string, samplePhone: string) => {
-    setQuizCode(code);
-    setName(sampleName);
-    setPhone(samplePhone);
-    setError(null);
   };
 
   return (
@@ -136,17 +131,11 @@ export default function JoinPage() {
       {/* Main Join Form */}
       <div ref={formRef} className="max-w-md mx-auto w-full my-auto py-6">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 bg-neutral-900 text-white rounded-2xl flex items-center justify-center font-bold text-lg mx-auto shadow-sm mb-4">
-            BB
-          </div>
-          <span className="text-xs font-bold uppercase tracking-widest text-neutral-400">
-            BUGBUSTERS
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-950 mt-1">
-            Enter the challenge
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-950">
+            Bug Busters
           </h1>
           <p className="text-sm text-neutral-500 mt-1">
-            Enter your symposium quiz credentials to begin your timed attempt.
+            Enter your details to begin the quiz.
           </p>
         </div>
 
@@ -222,32 +211,6 @@ export default function JoinPage() {
               </Button>
             </div>
           </form>
-
-          {/* Quick Presets for Demo */}
-          <div className="mt-6 pt-5 border-t border-neutral-100">
-            <div className="flex items-center gap-1.5 text-xs text-neutral-400 mb-2.5 font-medium">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Quick Demo Fill</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => applyPreset('TECH26', 'Vibhakar S', '+91 98765 43210')}
-                className="text-xs bg-neutral-100 hover:bg-neutral-200 text-neutral-800 px-3 py-1.5 rounded-lg font-mono-tabular flex items-center gap-1 transition-colors"
-              >
-                <Check className="w-3 h-3 text-neutral-500" />
-                TECH26 • Vibhakar
-              </button>
-              <button
-                type="button"
-                onClick={() => applyPreset('TECH26', 'Rahul Mehta', '+91 98450 12345')}
-                className="text-xs bg-neutral-100 hover:bg-neutral-200 text-neutral-800 px-3 py-1.5 rounded-lg font-mono-tabular flex items-center gap-1 transition-colors"
-              >
-                <Check className="w-3 h-3 text-neutral-500" />
-                TECH26 • Rahul
-              </button>
-            </div>
-          </div>
         </Card>
 
         {/* Security Notice */}

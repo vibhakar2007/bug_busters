@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Participant } from '@/types/participant';
-import { readJsonData, writeJsonData } from '@/lib/server/jsonStorage';
+import { readJsonData, updateJsonData } from '@/lib/server/jsonStorage';
 import participantsFallback from '@/data/participants.json';
 
 export async function GET(
@@ -30,31 +30,52 @@ export async function PUT(
   const participantId = Number(id);
   try {
     const data: Partial<Participant> = await request.json();
-    const participants = await readJsonData<Participant[]>(
+
+    let resultParticipant: Participant | null = null;
+
+    await updateJsonData<Participant[]>(
       'participants.json',
-      participantsFallback as unknown as Participant[]
+      participantsFallback as unknown as Participant[],
+      (participants) => {
+        const index = participants.findIndex((p) => p.participant_id === participantId);
+        let updated: Participant;
+        if (index === -1) {
+          updated = {
+            participant_id: participantId,
+            name: data.name || `Participant #${participantId}`,
+            phone: data.phone || '',
+            quiz_id: data.quiz_id || 1,
+            start_time: data.start_time || new Date().toISOString(),
+            end_time: data.end_time || null,
+            score: data.score ?? null,
+            status: data.status || 'active',
+            violation_count: data.violation_count || 0,
+            current_question: data.current_question || 1,
+            total_questions: data.total_questions || 40,
+            last_activity_time: new Date().toISOString(),
+            last_activity_description: data.last_activity_description || 'Active',
+          };
+          resultParticipant = updated;
+          return [updated, ...participants];
+        } else {
+          const current = participants[index];
+          updated = {
+            ...current,
+            ...data,
+            last_activity_time: new Date().toISOString(),
+          };
+          if (updated.violation_count >= 3 && updated.status === 'active') {
+            updated.status = 'flagged';
+          }
+          resultParticipant = updated;
+          const copy = [...participants];
+          copy[index] = updated;
+          return copy;
+        }
+      }
     );
 
-    const index = participants.findIndex((p) => p.participant_id === participantId);
-    if (index === -1) {
-      return NextResponse.json({ error: 'Participant not found' }, { status: 404 });
-    }
-
-    const current = participants[index];
-    const updated: Participant = {
-      ...current,
-      ...data,
-      last_activity_time: new Date().toISOString(),
-    };
-
-    if (updated.violation_count >= 3 && updated.status === 'active') {
-      updated.status = 'flagged';
-    }
-
-    participants[index] = updated;
-    await writeJsonData('participants.json', participants);
-
-    return NextResponse.json(updated);
+    return NextResponse.json(resultParticipant);
   } catch (error) {
     console.error('Failed to update participant:', error);
     return NextResponse.json({ error: 'Failed to update participant' }, { status: 500 });

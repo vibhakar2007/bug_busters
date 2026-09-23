@@ -18,8 +18,6 @@ import {
   Radio,
   CheckCircle2,
   AlertTriangle,
-  Play,
-  Pause,
   RefreshCw,
   Clock,
 } from 'lucide-react';
@@ -29,9 +27,6 @@ export default function LiveMonitorPage() {
     participants,
     activities,
     stats,
-    isSimulating,
-    startSimulation,
-    stopSimulation,
   } = useLiveMonitor();
 
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
@@ -98,7 +93,7 @@ export default function LiveMonitorPage() {
           </p>
         </div>
 
-        {/* Live Simulation Controls */}
+        {/* Action Controls */}
         <div className="flex items-center gap-2.5 self-stretch sm:self-auto flex-wrap">
           <Button
             variant="outline"
@@ -112,28 +107,6 @@ export default function LiveMonitorPage() {
             <Clock className="w-3.5 h-3.5 text-neutral-600" />
             <span>Adjust Duration ({activeQuiz?.duration_minutes || 15}m)</span>
           </Button>
-
-          {isSimulating ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={stopSimulation}
-              className="gap-1.5 text-xs text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100"
-            >
-              <Pause className="w-3.5 h-3.5" />
-              <span>Stop Traffic Simulation</span>
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={startSimulation}
-              className="gap-1.5 text-xs text-neutral-800 hover:text-neutral-950 border-neutral-300 shadow-xs"
-            >
-              <Play className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Simulate Live Traffic</span>
-            </Button>
-          )}
 
           <Button
             variant="ghost"

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import gsap from 'gsap';
 import { Participant, ParticipantResult } from '@/types/participant';
 import { ParticipantActivity } from '@/types/activity';
 import { activityService } from '@/lib/api/activityService';
@@ -80,6 +81,24 @@ export const ParticipantDrawer: React.FC<ParticipantDrawerProps> = ({
     };
   }, [participant, isOpen]);
 
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen && panelRef.current && backdropRef.current) {
+      gsap.fromTo(
+        backdropRef.current,
+        { opacity: 0 },
+        { opacity: 1, duration: 0.25, ease: 'power2.out' }
+      );
+      gsap.fromTo(
+        panelRef.current,
+        { x: 60, opacity: 0 },
+        { x: 0, opacity: 1, duration: 0.35, ease: 'power3.out' }
+      );
+    }
+  }, [isOpen, participant?.participant_id]);
+
   if (!isOpen || !participant) return null;
 
   const getActivityIcon = (type: string) => {
@@ -113,13 +132,17 @@ export const ParticipantDrawer: React.FC<ParticipantDrawerProps> = ({
     <div className="fixed inset-0 z-50 overflow-hidden">
       {/* Backdrop */}
       <div
+        ref={backdropRef}
         onClick={onClose}
         className="absolute inset-0 bg-neutral-900/30 backdrop-blur-xs transition-opacity"
       />
 
       {/* Slide-over Drawer Panel */}
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10">
-        <div className="w-screen max-w-2xl bg-white border-l border-neutral-200 shadow-2xl flex flex-col justify-between">
+        <div
+          ref={panelRef}
+          className="w-screen max-w-2xl bg-white border-l border-neutral-200 shadow-2xl flex flex-col justify-between"
+        >
           {/* Header */}
           <div className="p-6 border-b border-neutral-100 bg-neutral-50/50">
             <div className="flex items-start justify-between">
@@ -298,9 +321,9 @@ export const ParticipantDrawer: React.FC<ParticipantDrawerProps> = ({
 
                     {/* Question Items List */}
                     <div className="space-y-4">
-                      {filteredReviewItems.map((item) => (
+                      {filteredReviewItems.map((item, idx) => (
                         <div
-                          key={item.question_id}
+                          key={`${item.question_id}-${item.question_index ?? idx}`}
                           className="p-4 border border-neutral-200/90 rounded-2xl bg-white space-y-3"
                         >
                           {/* Question header */}

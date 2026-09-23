@@ -1,152 +1,68 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Participant } from '@/types/participant';
-import { ParticipantActivity, ActivityEventType } from '@/types/activity';
+import { ParticipantActivity } from '@/types/activity';
 import { participantService } from '@/lib/api/participantService';
 import { activityService } from '@/lib/api/activityService';
 
 export function useLiveMonitor() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [activities, setActivities] = useState<ParticipantActivity[]>([]);
-  const [isSimulating, setIsSimulating] = useState<boolean>(false);
-  const simulationTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Subscribe to participants
+  // Subscribe to local event bus updates
   useEffect(() => {
-    const unsubscribe = participantService.subscribeToParticipants((updatedList) => {
+    const unsubParticipants = participantService.subscribeToParticipants((updatedList) => {
       setParticipants(updatedList);
     });
-    return () => {
-      unsubscribe();
-    };
-  }, []);
 
-  // Fetch initial activities and subscribe to incoming real-time activity events
-  useEffect(() => {
-    activityService.getRecentActivities(25).then((list) => {
-      setActivities(list);
-    });
-
-    const unsubscribe = activityService.subscribeToActivity((newActivity) => {
+    const unsubActivity = activityService.subscribeToActivity((newActivity) => {
       setActivities((prev) => [newActivity, ...prev.slice(0, 49)]);
     });
 
     return () => {
-      unsubscribe();
+      unsubParticipants();
+      unsubActivity();
     };
   }, []);
 
-  // Simulation engine
-  const startSimulation = useCallback(() => {
-    setIsSimulating(true);
-  }, []);
-
-  const stopSimulation = useCallback(() => {
-    setIsSimulating(false);
-    if (simulationTimerRef.current) {
-      clearInterval(simulationTimerRef.current);
-      simulationTimerRef.current = null;
-    }
-  }, []);
-
+  // Multi-user periodic sync to automatically pull live data across all connected devices
   useEffect(() => {
-    if (!isSimulating) {
-      if (simulationTimerRef.current) {
-        clearInterval(simulationTimerRef.current);
-        simulationTimerRef.current = null;
-      }
-      return;
-    }
+    let isMounted = true;
 
-    const runSimTick = async () => {
-      const currentParticipants = await participantService.getAllParticipants();
-      const activeOnly = currentParticipants.filter((p) => p.status === 'active');
-      if (activeOnly.length === 0) return;
+    const fetchSync = async () => {
+      try {
+        const [pRes, aRes] = await Promise.all([
+          fetch('/api/participants'),
+          fetch('/api/activity'),
+        ]);
 
-      const randomParticipant = activeOnly[Math.floor(Math.random() * activeOnly.length)];
-      const eventRoll = Math.random();
+        if (!isMounted) return;
 
-      if (eventRoll < 0.7) {
-        // Normal answer progress
-        const currentQ = (randomParticipant.current_question || 1) + 1;
-        const isFinished = currentQ >= (randomParticipant.total_questions || 20);
-
-        if (isFinished) {
-          const finalScore = Math.floor(14 + Math.random() * 6);
-          await participantService.updateParticipant(randomParticipant.participant_id, {
-            status: 'completed',
-            score: finalScore,
-            current_question: 20,
-            last_activity_description: `Quiz submitted (${finalScore}/20)`,
-          });
-          await activityService.recordActivity({
-            participant_id: randomParticipant.participant_id,
-            participant_name: randomParticipant.name,
-            registration_number: randomParticipant.phone,
-            event_type: 'quiz_submitted',
-            details: `Completed quiz with score ${finalScore}/20`,
-          });
-        } else {
-          await participantService.updateParticipant(randomParticipant.participant_id, {
-            current_question: currentQ,
-            last_activity_description: `Answered Question ${currentQ}`,
-          });
-          const options = ['a', 'b', 'c', 'd'];
-          const chosen = options[Math.floor(Math.random() * 4)];
-          await activityService.recordActivity({
-            participant_id: randomParticipant.participant_id,
-            participant_name: randomParticipant.name,
-            registration_number: randomParticipant.phone,
-            question_id: currentQ,
-            event_type: 'answer_selected',
-            selected_option: chosen,
-            details: `Answered Question ${currentQ} (${chosen.toUpperCase()})`,
-          });
+        if (pRes.ok) {
+          const pData = await pRes.json();
+          if (Array.isArray(pData)) {
+            setParticipants(pData);
+          }
         }
-      } else if (eventRoll < 0.9) {
-        // Warning: focus loss or context menu
-        const warningTypes: ActivityEventType[] = ['focus_loss', 'context_menu', 'fullscreen_exit'];
-        const chosen = warningTypes[Math.floor(Math.random() * warningTypes.length)];
-        const msg =
-          chosen === 'focus_loss'
-            ? 'Browser focus lost'
-            : chosen === 'context_menu'
-            ? 'Context menu right-click attempt'
-            : 'Fullscreen mode exited';
 
-        await participantService.incrementViolation(randomParticipant.participant_id, msg);
-        await activityService.recordActivity({
-          participant_id: randomParticipant.participant_id,
-          participant_name: randomParticipant.name,
-          registration_number: randomParticipant.phone,
-          event_type: chosen,
-          details: msg,
-        });
-      } else {
-        // Violation: tab switch or copy
-        const violationTypes: ActivityEventType[] = ['tab_switch', 'copy_attempt'];
-        const chosen = violationTypes[Math.floor(Math.random() * violationTypes.length)];
-        const msg =
-          chosen === 'tab_switch' ? 'Tab switch detected' : 'Content copy attempt prevented';
-
-        await participantService.incrementViolation(randomParticipant.participant_id, msg);
-        await activityService.recordActivity({
-          participant_id: randomParticipant.participant_id,
-          participant_name: randomParticipant.name,
-          registration_number: randomParticipant.phone,
-          event_type: chosen,
-          details: msg,
-        });
+        if (aRes.ok) {
+          const aData = await aRes.json();
+          if (Array.isArray(aData)) {
+            setActivities(aData.slice(0, 50));
+          }
+        }
+      } catch {
+        // silent on network disconnect
       }
     };
 
-    simulationTimerRef.current = setInterval(runSimTick, 4500);
+    fetchSync();
+    const interval = setInterval(fetchSync, 2500);
 
     return () => {
-      if (simulationTimerRef.current) {
-        clearInterval(simulationTimerRef.current);
-      }
+      isMounted = false;
+      clearInterval(interval);
     };
-  }, [isSimulating]);
+  }, []);
 
   // Aggregate stats
   const total = participants.length;
@@ -165,8 +81,5 @@ export function useLiveMonitor() {
       flagged,
       totalViolations,
     },
-    isSimulating,
-    startSimulation,
-    stopSimulation,
   };
 }

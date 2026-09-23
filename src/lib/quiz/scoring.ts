@@ -46,7 +46,10 @@ export function calculateQuizResult(session: QuizSession): ParticipantResult {
 
   const startMs = new Date(session.startTime).getTime();
   const endMs = session.submittedAt ? new Date(session.submittedAt).getTime() : Date.now();
-  const timeTakenSeconds = Math.max(0, Math.floor((endMs - startMs) / 1000));
+  const rawSeconds = Math.max(0, Math.floor((endMs - startMs) / 1000));
+  // Time taken can never exceed the total quiz duration
+  const maxAllowedSeconds = (session.durationMinutes || 20) * 60;
+  const timeTakenSeconds = Math.min(rawSeconds, maxAllowedSeconds);
 
   return {
     participant_id: session.participant_id,

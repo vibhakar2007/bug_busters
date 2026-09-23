@@ -3,12 +3,15 @@
 import React from 'react';
 import Link from 'next/link';
 import { Phone, Maximize, Wifi } from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
 
 interface ParticipantNavbarProps {
   quizTitle?: string;
   phone?: string;
   registrationNumber?: string;
   onFullscreenRequest?: () => void;
+  className?: string;
+  isSticky?: boolean;
 }
 
 export const ParticipantNavbar: React.FC<ParticipantNavbarProps> = ({
@@ -16,22 +19,25 @@ export const ParticipantNavbar: React.FC<ParticipantNavbarProps> = ({
   phone,
   registrationNumber,
   onFullscreenRequest,
+  className,
+  isSticky = true,
 }) => {
   const displayPhone = phone || registrationNumber;
 
   return (
-    <header className="w-full bg-white border-b border-neutral-200/80 sticky top-0 z-30">
+    <header
+      className={cn(
+        'w-full bg-white border-b border-neutral-200/80',
+        isSticky && 'sticky top-0 z-30',
+        className
+      )}
+    >
       <div className="max-w-4xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
         {/* Brand */}
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-7 h-7 bg-neutral-900 text-white rounded-lg flex items-center justify-center font-bold text-xs tracking-wider transition-transform group-hover:scale-105">
-            BB
-          </div>
-          <div className="flex flex-col">
-            <span className="font-semibold text-sm sm:text-base tracking-tight text-neutral-900">
-              BugBusters
-            </span>
-          </div>
+        <Link href="/" className="flex items-center group">
+          <span className="font-bold text-base sm:text-lg tracking-tight text-neutral-900 group-hover:text-neutral-700 transition-colors">
+            Bug Busters
+          </span>
         </Link>
 
         {/* Center info if in quiz */}
@@ -60,7 +66,7 @@ export const ParticipantNavbar: React.FC<ParticipantNavbarProps> = ({
             <button
               onClick={onFullscreenRequest}
               title="Toggle Fullscreen"
-              className="p-1.5 text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors"
+              className="p-1.5 text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer"
             >
               <Maximize className="w-4 h-4" />
             </button>
