@@ -16,7 +16,13 @@ class ActivityService {
 
   private async syncFromServer() {
     try {
-      const res = await fetch('/api/activity');
+      const res = await fetch('/api/activity?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', {
+        headers: {
+          'Accept': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+          'bypass-tunnel-reminder': 'true',
+        },
+      });
       if (res.ok) {
         const data: ParticipantActivity[] = await res.json();
         if (Array.isArray(data) && data.length > 0) {
@@ -105,9 +111,13 @@ class ActivityService {
     // Persist to server /data/activity.json
     if (typeof window !== 'undefined') {
       try {
-        await fetch('/api/activity', {
+        await fetch('/api/activity?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+            'bypass-tunnel-reminder': 'true',
+          },
           body: JSON.stringify(input),
         });
       } catch (err) {

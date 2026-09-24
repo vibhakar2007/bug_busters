@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { QuizSession } from '@/types/quiz';
+import { QuizSession, Quiz } from '@/types/quiz';
+import { Participant } from '@/types/participant';
 import { quizService } from '@/lib/api/quizService';
 import { participantService } from '@/lib/api/participantService';
 import { activityService } from '@/lib/api/activityService';
@@ -53,9 +54,11 @@ export function useQuiz({ quizCode, phone }: UseQuizProps) {
       // Calculate score & results with complete review items
       const result = calculateQuizResult(finalizedSession);
 
-      // Save result in localStorage for /result page
+      // Save result in localStorage and sessionStorage for /result page
       if (typeof window !== 'undefined') {
-        localStorage.setItem('bugbusters_latest_result', JSON.stringify(result));
+        const json = JSON.stringify(result);
+        localStorage.setItem('bugbusters_latest_result', json);
+        sessionStorage.setItem('bugbusters_latest_result', json);
       }
 
       // Record result in participant service repository for admin review
@@ -80,8 +83,8 @@ export function useQuiz({ quizCode, phone }: UseQuizProps) {
         details: `Final score: ${result.score}/${result.total_questions} (${result.percentage}%)`,
       });
 
-      // Redirect to results
-      router.push('/result');
+      // Redirect to results with pid param for foolproof retrieval
+      router.push(`/result?pid=${currentSession.participant_id}`);
     } catch (err) {
       console.error('Failed to submit quiz:', err);
       setIsSubmitting(false);
@@ -97,17 +100,32 @@ export function useQuiz({ quizCode, phone }: UseQuizProps) {
       setError(null);
 
       try {
-        let code = quizCode;
-        let participantPhone = phone;
+        let code = quizCode || '';
+        let participantPhone = phone || '';
+        let participantId: number | null = null;
 
-        if (!code || !participantPhone) {
-          const storedCode = localStorage.getItem('bugbusters_active_quiz_code');
-          const storedPhone =
-            localStorage.getItem('bugbusters_active_phone') ||
-            localStorage.getItem('bugbusters_active_reg_no');
-          if (storedCode && storedPhone) {
-            code = storedCode;
-            participantPhone = storedPhone;
+        // 1. Read URL query parameters (essential for mobile tunnels)
+        if (typeof window !== 'undefined') {
+          const urlParams = new URLSearchParams(window.location.search);
+          const uCode = urlParams.get('code');
+          const uPhone = urlParams.get('phone');
+          const uPid = urlParams.get('pid');
+
+          if (uCode) code = uCode;
+          if (uPhone) participantPhone = uPhone;
+          if (uPid) participantId = Number(uPid);
+
+          // 2. Fallback to localStorage
+          if (!code) code = localStorage.getItem('bugbusters_active_quiz_code') || '';
+          if (!participantPhone) {
+            participantPhone =
+              localStorage.getItem('bugbusters_active_phone') ||
+              localStorage.getItem('bugbusters_active_reg_no') ||
+              '';
+          }
+          if (!participantId) {
+            const sPid = localStorage.getItem('bugbusters_active_participant_id');
+            if (sPid) participantId = Number(sPid);
           }
         }
 
@@ -117,7 +135,29 @@ export function useQuiz({ quizCode, phone }: UseQuizProps) {
           return;
         }
 
-        const quiz = await quizService.getQuizByCode(code);
+        // 3. Fetch quiz from quizService or host machine API
+        let quiz = await quizService.getQuizByCode(code);
+        if (!quiz) {
+          try {
+            const qRes = await fetch('/api/quizzes?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', {
+              headers: {
+                'Accept': 'application/json',
+                'ngrok-skip-browser-warning': 'true',
+                'bypass-tunnel-reminder': 'true',
+              },
+            });
+            if (qRes.ok) {
+              const text = await qRes.text();
+              const allQuizzes: Quiz[] = JSON.parse(text);
+              if (Array.isArray(allQuizzes)) {
+                quiz = allQuizzes.find((q) => q.code.toUpperCase() === code.toUpperCase()) || null;
+              }
+            }
+          } catch (e) {
+            console.warn('Failed direct fetch of quizzes:', e);
+          }
+        }
+
         if (!quiz) {
           setError(`Quiz code "${code}" not found.`);
           setIsLoading(false);
@@ -130,9 +170,43 @@ export function useQuiz({ quizCode, phone }: UseQuizProps) {
           return;
         }
 
-        const participant = await participantService.getParticipantByPhone(participantPhone, quiz.quiz_id);
+        // 4. Fetch participant directly from host machine API
+        let participant: Participant | null = null;
+        try {
+          const queryUrl = participantId
+            ? `/api/participants/${participantId}?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true`
+            : `/api/participants?phone=${encodeURIComponent(participantPhone)}&quiz_id=${quiz.quiz_id}&ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true`;
+
+          const pRes = await fetch(queryUrl, {
+            headers: {
+              'Accept': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+              'bypass-tunnel-reminder': 'true',
+            },
+          });
+          if (pRes.ok) {
+            const text = await pRes.text();
+            participant = JSON.parse(text);
+          }
+        } catch (e) {
+          console.warn('Failed direct fetch of participant from machine:', e);
+        }
+
         if (!participant) {
-          setError('Participant record not found. Please join again.');
+          participant = await participantService.getParticipantByPhone(participantPhone, quiz.quiz_id);
+        }
+
+        if (!participant && typeof window !== 'undefined') {
+          const storedPart = sessionStorage.getItem('bugbusters_active_participant');
+          if (storedPart) {
+            try {
+              participant = JSON.parse(storedPart);
+            } catch {}
+          }
+        }
+
+        if (!participant) {
+          setError('Participant record not found. Please return to the join page and enter your credentials.');
           setIsLoading(false);
           return;
         }

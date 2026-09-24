@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { ParticipantNavbar } from '@/components/layout/ParticipantNavbar';
 import { QuestionCard } from '@/components/quiz/QuestionCard';
 import { OptionButton } from '@/components/quiz/OptionButton';
-import { QuizTimer } from '@/components/quiz/QuizTimer';
 import { ViolationWarningToast } from '@/components/quiz/ViolationWarningToast';
 import { SubmitModal } from '@/components/quiz/SubmitModal';
 import { QuestionPaletteModal } from '@/components/quiz/QuestionPaletteModal';
@@ -74,11 +73,6 @@ export default function QuizPage() {
   const handlePrev = () => {
     goToPrevious();
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleAutoSubmitOnExpire = () => {
-    console.warn('Countdown expired! Automatically submitting quiz.');
-    submitQuiz();
   };
 
   // Loading state
@@ -152,7 +146,7 @@ export default function QuizPage() {
               </span>
             </div>
 
-            {/* Controls: Quick Submit, Palette button & Timer */}
+            {/* Controls: Palette button & Submit */}
             <div className="flex items-center gap-2 sm:gap-3">
               <button
                 type="button"
@@ -167,17 +161,12 @@ export default function QuizPage() {
               <button
                 type="button"
                 onClick={() => setIsSubmitModalOpen(true)}
-                className="px-2.5 py-1.5 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-800 text-xs font-medium hidden sm:flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-medium flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
                 title="Submit Quiz"
               >
-                <Send className="w-3 h-3 text-neutral-500" />
+                <Send className="w-3 h-3 text-neutral-300" />
                 <span>Submit</span>
               </button>
-
-              <QuizTimer
-                endTimeExpected={session.endTimeExpected}
-                onExpire={handleAutoSubmitOnExpire}
-              />
             </div>
           </div>
 

@@ -4,15 +4,52 @@ import { readJsonData, updateJsonData } from '@/lib/server/jsonStorage';
 import participantsFallback from '@/data/participants.json';
 
 function normalizePhone(phone: string): string {
-  return phone.replace(/[\s\-\(\)]/g, '').trim();
+  const digits = String(phone || '').replace(/\D/g, '').trim();
+  return digits.length >= 10 ? digits.slice(-10) : digits;
 }
 
-export async function GET() {
+function corsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, ngrok-skip-browser-warning, bypass-tunnel-reminder',
+    'ngrok-skip-browser-warning': 'true',
+    'bypass-tunnel-reminder': 'true',
+  };
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders(),
+  });
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const phoneParam = searchParams.get('phone');
+  const quizIdParam = searchParams.get('quiz_id');
+
   const participants = await readJsonData<Participant[]>(
     'participants.json',
     participantsFallback as unknown as Participant[]
   );
-  return NextResponse.json(participants);
+
+  if (phoneParam) {
+    const norm = normalizePhone(phoneParam);
+    const quizId = quizIdParam ? Number(quizIdParam) : null;
+    const found = participants.find((p) => {
+      const matchPhone = normalizePhone(p.phone) === norm;
+      return quizId ? matchPhone && p.quiz_id === quizId : matchPhone;
+    });
+
+    if (!found) {
+      return NextResponse.json({ error: 'Participant not found' }, { status: 404, headers: corsHeaders() });
+    }
+    return NextResponse.json(found, { headers: corsHeaders() });
+  }
+
+  return NextResponse.json(participants, { headers: corsHeaders() });
 }
 
 export async function POST(request: Request) {
@@ -73,13 +110,13 @@ export async function POST(request: Request) {
     if (isAlreadyCompleted) {
       return NextResponse.json(
         { error: 'You have already completed this quiz with this phone number.' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders() }
       );
     }
 
-    return NextResponse.json(createdOrExisting, { status: 201 });
+    return NextResponse.json(createdOrExisting, { status: 201, headers: corsHeaders() });
   } catch (error) {
     console.error('Failed to create participant:', error);
-    return NextResponse.json({ error: 'Failed to create participant' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create participant' }, { status: 500, headers: corsHeaders() });
   }
 }

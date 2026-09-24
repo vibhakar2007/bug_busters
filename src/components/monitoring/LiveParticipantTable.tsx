@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Participant } from '@/types/participant';
 import { Badge } from '@/components/ui/Badge';
 import { Progress } from '@/components/ui/Progress';
-import { Search, AlertTriangle, ChevronRight, Clock } from 'lucide-react';
+import { Search, AlertTriangle, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 interface LiveParticipantTableProps {
@@ -17,20 +17,10 @@ interface LiveParticipantTableProps {
 export const LiveParticipantTable: React.FC<LiveParticipantTableProps> = ({
   participants,
   onSelectParticipant,
-  quizDurationMinutes = 15,
   className,
 }) => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed' | 'flagged'>('all');
-  const [currentTime, setCurrentTime] = useState<number>(() => Date.now());
-
-  // Re-render every second to tick countdown timers cleanly
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   const filtered = useMemo(() => {
     return participants.filter((p) => {
@@ -69,51 +59,6 @@ export const LiveParticipantTable: React.FC<LiveParticipantTableProps> = ({
       <Badge variant="success" dot>
         Active
       </Badge>
-    );
-  };
-
-  const getRemainingTime = (p: Participant) => {
-    if (p.status === 'completed') {
-      return (
-        <span className="text-neutral-400 font-mono-tabular text-xs">
-          Submitted
-        </span>
-      );
-    }
-    if (!p.start_time) {
-      return (
-        <span className="text-neutral-500 font-mono-tabular text-xs">
-          {quizDurationMinutes}m 00s
-        </span>
-      );
-    }
-    const startMs = new Date(p.start_time).getTime();
-    const endMs = startMs + quizDurationMinutes * 60 * 1000;
-    const remainingMs = endMs - currentTime;
-
-    if (remainingMs <= 0) {
-      return (
-        <span className="text-rose-600 font-bold font-mono-tabular text-xs">
-          Expired
-        </span>
-      );
-    }
-
-    const totalSeconds = Math.floor(remainingMs / 1000);
-    const m = Math.floor(totalSeconds / 60);
-    const s = totalSeconds % 60;
-    const isLow = totalSeconds <= 120;
-
-    return (
-      <span
-        className={cn(
-          'font-mono-tabular text-xs font-semibold inline-flex items-center gap-1',
-          isLow ? 'text-rose-600 animate-pulse' : 'text-neutral-700'
-        )}
-      >
-        <Clock className={cn('w-3 h-3', isLow ? 'text-rose-500' : 'text-neutral-400')} />
-        {m}m {s.toString().padStart(2, '0')}s
-      </span>
     );
   };
 
@@ -162,14 +107,13 @@ export const LiveParticipantTable: React.FC<LiveParticipantTableProps> = ({
               <th className="py-3 px-3">Progress</th>
               <th className="py-3 px-3 text-center">Score</th>
               <th className="py-3 px-3 text-center">Violations</th>
-              <th className="py-3 px-3 text-center">Time Remaining</th>
               <th className="py-3 px-3 text-right">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-8 text-center text-neutral-400 text-xs">
+                <td colSpan={7} className="py-8 text-center text-neutral-400 text-xs">
                   No participants match current filter.
                 </td>
               </tr>
@@ -223,9 +167,6 @@ export const LiveParticipantTable: React.FC<LiveParticipantTableProps> = ({
                       ) : (
                         <span className="text-neutral-400">0</span>
                       )}
-                    </td>
-                    <td className="py-3 px-3 text-center">
-                      {getRemainingTime(p)}
                     </td>
                     <td className="py-3 px-3 text-right">
                       <div className="inline-flex items-center justify-center p-1.5 rounded-lg text-neutral-400 group-hover:text-neutral-900 group-hover:bg-neutral-100 transition-colors">

@@ -58,7 +58,10 @@ export async function createOrRestoreQuizSession(
 
   if (typeof window !== 'undefined') {
     try {
-      const existing = localStorage.getItem(storageKey);
+      let existing = localStorage.getItem(storageKey);
+      if (!existing) {
+        existing = sessionStorage.getItem(storageKey);
+      }
       if (existing) {
         const session: QuizSession = JSON.parse(existing);
         // Validate if it's the exact same quiz and participant
@@ -144,7 +147,9 @@ export function saveQuizSession(session: QuizSession): void {
   if (typeof window !== 'undefined') {
     try {
       const storageKey = `${SESSION_STORAGE_PREFIX}${session.quiz_id}_${session.participant_id}`;
-      localStorage.setItem(storageKey, JSON.stringify(session));
+      const json = JSON.stringify(session);
+      localStorage.setItem(storageKey, json);
+      sessionStorage.setItem(storageKey, json);
     } catch (e) {
       console.warn('Failed to persist session:', e);
     }
@@ -156,6 +161,7 @@ export function clearQuizSession(quizId: number, participantId: number): void {
     try {
       const storageKey = `${SESSION_STORAGE_PREFIX}${quizId}_${participantId}`;
       localStorage.removeItem(storageKey);
+      sessionStorage.removeItem(storageKey);
     } catch (e) {
       console.warn('Failed to clear session:', e);
     }

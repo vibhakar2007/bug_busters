@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -19,25 +19,8 @@ import { adminSignOut } from '@/components/admin/AdminAuthGuard';
 import { cn } from '@/lib/utils/cn';
 
 export const AdminHeader: React.FC = () => {
-  const [currentTime, setCurrentTime] = useState<string>('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-
-  useEffect(() => {
-    const updateTime = () => {
-      setCurrentTime(
-        new Date().toLocaleTimeString('en-US', {
-          hour12: false,
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-        })
-      );
-    };
-    updateTime();
-    const timer = setInterval(updateTime, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   const navItems = [
     { label: 'Overview', href: '/admin', icon: LayoutDashboard, exact: true },
@@ -87,11 +70,6 @@ export const AdminHeader: React.FC = () => {
             <Radio className="w-3 h-3 text-emerald-600 hidden sm:inline" />
             <span>Live</span>
           </div>
-
-          {/* Live Clock */}
-          <span className="text-xs font-mono-tabular text-neutral-500 hidden lg:inline-block">
-            {currentTime}
-          </span>
 
           {/* Participant view quick link */}
           <Link

@@ -16,10 +16,9 @@ import {
   Download,
   AlertTriangle,
   ArrowUpDown,
-  Clock,
   Eye,
 } from 'lucide-react';
-import { cn, formatTime } from '@/lib/utils/cn';
+import { cn } from '@/lib/utils/cn';
 
 interface EnrichedResultItem {
   participant_id: number;
@@ -33,15 +32,13 @@ interface EnrichedResultItem {
   incorrect_count: number;
   unanswered_count: number;
   violation_count: number;
-  time_taken_seconds: number;
-  time_taken_formatted: string;
   integrity_status: 'Verified Clean' | 'Minor Warning' | 'Audit Flagged';
   is_valid: boolean;
   rank: number | null;
   result: ParticipantResult | null;
 }
 
-type SortField = 'score' | 'time' | 'violations' | 'status';
+type SortField = 'score' | 'violations' | 'status';
 type SortOrder = 'asc' | 'desc';
 
 export default function AdminResultsPage() {
@@ -70,12 +67,33 @@ export default function AdminResultsPage() {
     setIsDrawerOpen(true);
   };
 
+  const handleFlagToggle = async (id: number, currentStatus: string) => {
+    if (currentStatus === 'flagged') {
+      const target = participants.find((p) => p.participant_id === id);
+      const isCompleted = target?.status === 'completed' || Boolean(target?.end_time);
+      const updated = await participantService.updateParticipant(id, {
+        status: isCompleted ? 'completed' : 'active',
+        violation_count: 0,
+        last_activity_description: 'Flag cleared by admin',
+      });
+      setSelectedParticipant(updated);
+      setParticipants((prev) => prev.map((p) => (p.participant_id === id ? updated : p)));
+    } else {
+      const updated = await participantService.updateParticipant(id, {
+        status: 'flagged',
+        last_activity_description: 'Manually flagged by admin',
+      });
+      setSelectedParticipant(updated);
+      setParticipants((prev) => prev.map((p) => (p.participant_id === id ? updated : p)));
+    }
+  };
+
   const handleSortToggle = (field: SortField) => {
     if (sortField === field) {
       setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortField(field);
-      setSortOrder(field === 'time' || field === 'violations' ? 'asc' : 'desc');
+      setSortOrder(field === 'violations' ? 'asc' : 'desc');
     }
   };
 
@@ -95,19 +113,6 @@ export default function AdminResultsPage() {
         const unanswered = res?.unanswered_count ?? 0;
         const percentage = res?.percentage ?? Math.round((score / totalQ) * 100);
 
-        let timeSec = res?.time_taken_seconds || 0;
-        let timeFmt = res?.time_taken_formatted || '';
-
-        if (!timeFmt) {
-          if (p.start_time && p.end_time) {
-            timeSec = Math.max(0, Math.floor((new Date(p.end_time).getTime() - new Date(p.start_time).getTime()) / 1000));
-            timeFmt = formatTime(timeSec);
-          } else {
-            timeSec = 720;
-            timeFmt = '12m 00s';
-          }
-        }
-
         const violations = p.violation_count || 0;
         const isFlagged = p.status === 'flagged' || violations >= 3;
         const isValid = !isFlagged;
@@ -126,8 +131,6 @@ export default function AdminResultsPage() {
           incorrect_count: incorrect,
           unanswered_count: unanswered,
           violation_count: violations,
-          time_taken_seconds: timeSec,
-          time_taken_formatted: timeFmt,
           integrity_status: integrity,
           is_valid: isValid,
           rank: null,
@@ -144,7 +147,7 @@ export default function AdminResultsPage() {
       .sort((a, b) => {
         const scoreDiff = b.score - a.score;
         if (scoreDiff !== 0) return scoreDiff;
-        return a.time_taken_seconds - b.time_taken_seconds;
+        return a.violation_count - b.violation_count;
       });
 
     const rankMap = new Map<number, number>();
@@ -170,13 +173,11 @@ export default function AdminResultsPage() {
           }
           const diff = b.score - a.score;
           if (diff !== 0) return sortOrder === 'asc' ? -diff : diff;
-          return a.time_taken_seconds - b.time_taken_seconds;
+          return a.violation_count - b.violation_count;
         }
 
         let diff = 0;
-        if (sortField === 'time') {
-          diff = a.time_taken_seconds - b.time_taken_seconds;
-        } else if (sortField === 'violations') {
+        if (sortField === 'violations') {
           diff = a.violation_count - b.violation_count;
         } else if (sortField === 'status') {
           const rankMap = { 'Verified Clean': 1, 'Minor Warning': 2, 'Audit Flagged': 3 };
@@ -194,7 +195,7 @@ export default function AdminResultsPage() {
       .sort((a, b) => {
         const scoreDiff = b.score - a.score;
         if (scoreDiff !== 0) return scoreDiff;
-        return a.time_taken_seconds - b.time_taken_seconds;
+        return a.violation_count - b.violation_count;
       })
       .slice(0, 3);
   }, [enrichedList]);
@@ -220,7 +221,6 @@ export default function AdminResultsPage() {
       'Wrong',
       'Unanswered',
       'Violations',
-      'Time Taken',
       'Integrity Status',
       'Validation Status',
     ];
@@ -236,7 +236,6 @@ export default function AdminResultsPage() {
       item.incorrect_count,
       item.unanswered_count,
       item.violation_count,
-      `"${item.time_taken_formatted}"`,
       `"${item.integrity_status}"`,
       item.is_valid ? 'Valid' : 'Disqualified (Flagged)',
     ]);
@@ -391,7 +390,7 @@ export default function AdminResultsPage() {
             <span className="text-neutral-400 text-[11px] uppercase font-semibold shrink-0">
               Sort by:
             </span>
-            {(['score', 'time', 'violations', 'status'] as const).map((field) => (
+            {(['score', 'violations', 'status'] as const).map((field) => (
               <button
                 key={field}
                 onClick={() => handleSortToggle(field)}
@@ -402,7 +401,7 @@ export default function AdminResultsPage() {
                     : 'bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-100'
                 )}
               >
-                <span>{field === 'time' ? 'Time Taken' : field}</span>
+                <span>{field}</span>
                 {sortField === field && (
                   <span className="text-[10px] font-mono-tabular">
                     {sortOrder === 'asc' ? '↑' : '↓'}
@@ -444,15 +443,6 @@ export default function AdminResultsPage() {
                   </span>
                 </th>
                 <th
-                  onClick={() => handleSortToggle('time')}
-                  className="py-3.5 px-4 text-center cursor-pointer hover:text-neutral-900 transition-colors"
-                >
-                  <span className="inline-flex items-center gap-1">
-                    Time Taken
-                    <ArrowUpDown className="w-3 h-3" />
-                  </span>
-                </th>
-                <th
                   onClick={() => handleSortToggle('status')}
                   className="py-3.5 px-4 text-center cursor-pointer hover:text-neutral-900 transition-colors"
                 >
@@ -467,7 +457,7 @@ export default function AdminResultsPage() {
             <tbody className="divide-y divide-neutral-100">
               {ranked.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="py-12 text-center text-xs text-neutral-400">
+                  <td colSpan={11} className="py-12 text-center text-xs text-neutral-400">
                     No completed submissions match current criteria.
                   </td>
                 </tr>
@@ -528,12 +518,6 @@ export default function AdminResultsPage() {
                           <span className="text-neutral-400">0</span>
                         )}
                       </td>
-                      <td className="py-3.5 px-4 text-center font-mono-tabular text-neutral-700 text-xs">
-                        <span className="inline-flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-neutral-400" />
-                          {item.time_taken_formatted}
-                        </span>
-                      </td>
                       <td className="py-3.5 px-4 text-center whitespace-nowrap">
                         {!item.is_valid ? (
                           <Badge variant="danger" size="sm" dot>
@@ -577,6 +561,7 @@ export default function AdminResultsPage() {
         participant={selectedParticipant}
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
+        onFlagToggle={handleFlagToggle}
         initialTab="review"
       />
     </div>

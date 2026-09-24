@@ -9,15 +9,12 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { animatePageEntrance } from '@/animations/gsap';
-import { Plus, Play, Pause, Eye, Clock, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, Play, Pause, Eye, Trash2, AlertTriangle } from 'lucide-react';
 
 export default function QuizManagementPage() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedQuizForDuration, setSelectedQuizForDuration] = useState<Quiz | null>(null);
   const [selectedQuizForDelete, setSelectedQuizForDelete] = useState<Quiz | null>(null);
-  const [newDuration, setNewDuration] = useState<number>(15);
-  const [isDurationModalOpen, setIsDurationModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -36,18 +33,6 @@ export default function QuizManagementPage() {
   const handleStatusToggle = async (quizId: number, currentStatus: QuizStatus) => {
     const newStatus: QuizStatus = currentStatus === 'live' ? 'closed' : 'live';
     await quizService.updateQuizStatus(quizId, newStatus);
-  };
-
-  const openDurationModal = (quiz: Quiz) => {
-    setSelectedQuizForDuration(quiz);
-    setNewDuration(quiz.duration_minutes);
-    setIsDurationModalOpen(true);
-  };
-
-  const handleSaveDuration = async () => {
-    if (!selectedQuizForDuration) return;
-    await quizService.updateQuizDuration(selectedQuizForDuration.quiz_id, newDuration);
-    setIsDurationModalOpen(false);
   };
 
   const openDeleteModal = (quiz: Quiz) => {

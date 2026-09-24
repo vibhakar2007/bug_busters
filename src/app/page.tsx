@@ -44,7 +44,7 @@ export default function LandingPage() {
         </p>
 
         <p className="mt-3 text-sm text-neutral-500 max-w-md">
-          Answer randomized questions within the time limit. Enter your details to begin.
+          Answer randomized questions. Enter your details to begin.
         </p>
 
         {/* Primary CTA */}
@@ -61,7 +61,6 @@ export default function LandingPage() {
         {/* Simple details pills */}
         <div className="mt-12 flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs text-neutral-500">
           <span className="px-3 py-1 rounded-full bg-neutral-100 border border-neutral-200/60">40 Questions</span>
-          <span className="px-3 py-1 rounded-full bg-neutral-100 border border-neutral-200/60">1:30 Hours</span>
           <span className="px-3 py-1 rounded-full bg-neutral-100 border border-neutral-200/60">Cash Prizes</span>
         </div>
       </main>

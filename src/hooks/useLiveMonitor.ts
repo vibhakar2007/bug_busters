@@ -30,9 +30,14 @@ export function useLiveMonitor() {
 
     const fetchSync = async () => {
       try {
+        const tunnelHeaders = {
+          'Accept': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+          'bypass-tunnel-reminder': 'true',
+        };
         const [pRes, aRes] = await Promise.all([
-          fetch('/api/participants'),
-          fetch('/api/activity'),
+          fetch('/api/participants?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', { headers: tunnelHeaders }),
+          fetch('/api/activity?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', { headers: tunnelHeaders }),
         ]);
 
         if (!isMounted) return;

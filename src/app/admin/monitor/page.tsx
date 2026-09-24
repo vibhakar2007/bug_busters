@@ -7,11 +7,8 @@ import { LiveParticipantTable } from '@/components/monitoring/LiveParticipantTab
 import { LiveActivityFeed } from '@/components/monitoring/LiveActivityFeed';
 import { ParticipantDrawer } from '@/components/admin/ParticipantDrawer';
 import { Participant } from '@/types/participant';
-import { Quiz } from '@/types/quiz';
 import { participantService } from '@/lib/api/participantService';
-import { quizService } from '@/lib/api/quizService';
 import { Button } from '@/components/ui/Button';
-import { Modal } from '@/components/ui/Modal';
 import { animatePageEntrance } from '@/animations/gsap';
 import {
   Users,
@@ -19,7 +16,6 @@ import {
   CheckCircle2,
   AlertTriangle,
   RefreshCw,
-  Clock,
 } from 'lucide-react';
 
 export default function LiveMonitorPage() {
@@ -31,27 +27,11 @@ export default function LiveMonitorPage() {
 
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
-  const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
-  const [isDurationModalOpen, setIsDurationModalOpen] = useState(false);
-  const [newDuration, setNewDuration] = useState<number>(15);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     animatePageEntrance(containerRef.current);
-    quizService.getQuiz(1).then((q) => {
-      if (q) {
-        setActiveQuiz(q);
-        setNewDuration(q.duration_minutes);
-      }
-    });
   }, []);
-
-  const handleSaveDuration = async () => {
-    if (!activeQuiz) return;
-    await quizService.updateQuizDuration(activeQuiz.quiz_id, newDuration);
-    setActiveQuiz((prev) => (prev ? { ...prev, duration_minutes: newDuration } : null));
-    setIsDurationModalOpen(false);
-  };
 
   const handleSelectParticipant = (p: Participant) => {
     setSelectedParticipant(p);
@@ -67,11 +47,22 @@ export default function LiveMonitorPage() {
   };
 
   const handleFlagToggle = async (id: number, currentStatus: string) => {
-    const newStatus = currentStatus === 'flagged' ? 'active' : 'flagged';
-    const updated = await participantService.updateParticipant(id, {
-      status: newStatus as 'active' | 'flagged',
-    });
-    setSelectedParticipant(updated);
+    if (currentStatus === 'flagged') {
+      const target = participants.find((p) => p.participant_id === id);
+      const isCompleted = target?.status === 'completed' || Boolean(target?.end_time);
+      const updated = await participantService.updateParticipant(id, {
+        status: isCompleted ? 'completed' : 'active',
+        violation_count: 0,
+        last_activity_description: 'Flag cleared by admin',
+      });
+      setSelectedParticipant(updated);
+    } else {
+      const updated = await participantService.updateParticipant(id, {
+        status: 'flagged',
+        last_activity_description: 'Manually flagged by admin',
+      });
+      setSelectedParticipant(updated);
+    }
   };
 
   return (
@@ -98,24 +89,12 @@ export default function LiveMonitorPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
-              if (activeQuiz) setNewDuration(activeQuiz.duration_minutes);
-              setIsDurationModalOpen(true);
-            }}
-            className="gap-1.5 text-xs text-neutral-800 hover:text-neutral-950 border-neutral-300 shadow-xs"
-          >
-            <Clock className="w-3.5 h-3.5 text-neutral-600" />
-            <span>Adjust Duration ({activeQuiz?.duration_minutes || 15}m)</span>
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
             onClick={() => window.location.reload()}
             title="Refresh"
-            className="p-2"
+            className="gap-1.5 text-xs text-neutral-700 hover:text-neutral-950 border-neutral-300 shadow-xs"
           >
             <RefreshCw className="w-3.5 h-3.5 text-neutral-500" />
+            <span>Refresh</span>
           </Button>
         </div>
       </div>
@@ -163,7 +142,6 @@ export default function LiveMonitorPage() {
           <LiveParticipantTable
             participants={participants}
             onSelectParticipant={handleSelectParticipant}
-            quizDurationMinutes={activeQuiz?.duration_minutes || 15}
           />
         </div>
 
@@ -182,49 +160,8 @@ export default function LiveMonitorPage() {
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         onFlagToggle={handleFlagToggle}
+        initialTab="violations"
       />
-
-      {/* Adjust Quiz Duration Modal */}
-      <Modal
-        isOpen={isDurationModalOpen}
-        onClose={() => setIsDurationModalOpen(false)}
-        title="Adjust Live Quiz Duration"
-        description="Broadcasting duration changes automatically recalculates remaining countdown timers across all connected participant screens without resetting."
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1.5">
-              Duration Limit (Minutes)
-            </label>
-            <input
-              type="number"
-              min={1}
-              max={180}
-              value={newDuration}
-              onChange={(e) => setNewDuration(Number(e.target.value))}
-              className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-mono-tabular font-bold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:bg-white"
-            />
-          </div>
-
-          <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-200 text-xs text-neutral-600 leading-relaxed">
-            <p>
-              • If increased: Active participants receive extra time seamlessly.
-            </p>
-            <p className="mt-1">
-              • If decreased below elapsed time: The attempt auto-submits immediately.
-            </p>
-          </div>
-
-          <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-neutral-100">
-            <Button variant="outline" size="sm" onClick={() => setIsDurationModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" size="sm" onClick={handleSaveDuration}>
-              Apply New Duration
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }

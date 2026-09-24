@@ -5,10 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { quizService } from '@/lib/api/quizService';
-import { participantService } from '@/lib/api/participantService';
 import { animatePageEntrance } from '@/animations/gsap';
-import { ArrowLeft, Shield, AlertCircle } from 'lucide-react';
+import { ArrowLeft, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function JoinPage() {
   const router = useRouter();
@@ -18,10 +16,19 @@ export default function JoinPage() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     animatePageEntrance(formRef.current);
+
+    // Auto-fill active quiz code or phone if user visited previously
+    if (typeof window !== 'undefined') {
+      const storedCode = localStorage.getItem('bugbusters_active_quiz_code');
+      const storedPhone = localStorage.getItem('bugbusters_active_phone');
+      if (storedCode) setQuizCode(storedCode);
+      if (storedPhone) setPhone(storedPhone);
+    }
   }, []);
 
   const isValidPhone = (phoneNumber: string): boolean => {
@@ -32,6 +39,7 @@ export default function JoinPage() {
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccessMsg(null);
 
     const cleanCode = quizCode.trim().toUpperCase();
     const cleanName = name.trim();
@@ -53,62 +61,94 @@ export default function JoinPage() {
     }
 
     if (!isValidPhone(cleanPhone)) {
-      setError('Please enter a valid phone number (at least 10 digits, e.g. +91 98765 43210).');
+      setError('Please enter a valid phone number (at least 10 digits, e.g. 9876543210).');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // 1. Verify quiz exists and is live
-      const quiz = await quizService.getQuizByCode(cleanCode);
-      if (!quiz) {
-        setError(`This quiz code "${cleanCode}" isn't valid. Please verify with the event coordinator.`);
-        setIsLoading(false);
-        return;
-      }
-
-      if (quiz.status === 'closed') {
-        setError('This quiz is closed and no longer accepting participants.');
-        setIsLoading(false);
-        return;
-      }
-
-      if (quiz.status === 'draft') {
-        setError('This quiz is currently in draft mode and has not been launched by the administrator yet.');
-        setIsLoading(false);
-        return;
-      }
-
-      // 2. Check if this phone number already completed this quiz
-      const existingParticipant = await participantService.getParticipantByPhone(cleanPhone, quiz.quiz_id);
-      if (existingParticipant && existingParticipant.status === 'completed') {
-        setError('You have already completed this quiz with this phone number. Re-attempts are not permitted.');
-        setIsLoading(false);
-        return;
-      }
-
-      // 3. Create or resume participant
-      const participant = await participantService.createParticipant({
-        name: cleanName,
-        phone: cleanPhone,
-        quiz_id: quiz.quiz_id,
-        total_questions: quiz.question_count,
+      // Send directly to the host machine backend with tunnel bypass query params
+      const joinUrl = '/api/quiz/join?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true';
+      const res = await fetch(joinUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+          'bypass-tunnel-reminder': 'true',
+        },
+        body: JSON.stringify({
+          name: cleanName,
+          phone: cleanPhone,
+          quiz_code: cleanCode,
+        }),
       });
 
-      // 4. Save active keys for session restoration in browser
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('bugbusters_latest_result');
-        localStorage.setItem('bugbusters_active_quiz_code', cleanCode);
-        localStorage.setItem('bugbusters_active_phone', cleanPhone);
-        localStorage.setItem('bugbusters_active_participant_id', String(participant.participant_id));
+      const rawText = await res.text();
+      let data: {
+        success?: boolean;
+        error?: string;
+        isUnique?: boolean;
+        isResumed?: boolean;
+        participant?: {
+          participant_id: number;
+          name: string;
+          phone: string;
+          quiz_id: number;
+        };
+        quiz?: {
+          quiz_id: number;
+          title: string;
+          code: string;
+        };
+      };
+
+      try {
+        data = JSON.parse(rawText);
+      } catch (parseErr) {
+        console.error('Non-JSON response from host machine:', rawText.slice(0, 300));
+        if (rawText.includes('ngrok') || rawText.includes('Visit Site') || rawText.includes('ERR_NGROK')) {
+          throw new Error('Ngrok tunnel blocked this request. Please open the main tunnel link in your browser first and tap "Visit Site", then try again.');
+        }
+        if (rawText.includes('localtunnel') || rawText.includes('tunnel password') || rawText.includes('Friendly reminder')) {
+          throw new Error('Localtunnel requires confirmation. Please open the main link in your browser and accept the prompt.');
+        }
+        if (res.status === 502 || res.status === 503 || res.status === 504 || rawText.includes('502 Bad Gateway')) {
+          throw new Error(`Tunnel gateway timeout (HTTP ${res.status}). Verify that the host computer is actively running the development server.`);
+        }
+        throw new Error(`Host machine returned HTTP ${res.status}: ${rawText.slice(0, 80) || 'Empty response'}`);
       }
 
-      // 5. Navigate directly to /quiz
-      router.push('/quiz');
+      if (!res.ok || !data.success || !data.participant || !data.quiz) {
+        // Machine rejected: keep form fields intact so user does not lose typed data!
+        setError(data.error || 'Authentication denied by host machine.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Machine gave positive response!
+      const participant = data.participant;
+      const quiz = data.quiz;
+
+      setSuccessMsg(data.isResumed ? 'Resuming active session...' : 'Verified! Connecting to quiz...');
+
+      // Save credentials into both localStorage and sessionStorage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('bugbusters_latest_result');
+        localStorage.setItem('bugbusters_active_quiz_code', quiz.code);
+        localStorage.setItem('bugbusters_active_phone', participant.phone);
+        localStorage.setItem('bugbusters_active_participant_id', String(participant.participant_id));
+        sessionStorage.setItem('bugbusters_active_participant', JSON.stringify(participant));
+        sessionStorage.setItem('bugbusters_active_quiz', JSON.stringify(quiz));
+      }
+
+      // Route directly to /quiz with query parameters to guarantee session access
+      const targetUrl = `/quiz?code=${encodeURIComponent(quiz.code)}&phone=${encodeURIComponent(participant.phone)}&pid=${participant.participant_id}`;
+      router.push(targetUrl);
     } catch (err: unknown) {
-      console.error('Failed to join quiz:', err);
-      const msg = err instanceof Error ? err.message : 'An error occurred while connecting. Please try again.';
+      console.error('Failed to communicate with host machine:', err);
+      const msg = err instanceof Error ? err.message : 'Network error communicating with host machine.';
       setError(msg);
       setIsLoading(false);
     }
@@ -148,6 +188,13 @@ export default function JoinPage() {
               </div>
             )}
 
+            {successMsg && (
+              <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-900 text-xs flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <span className="leading-relaxed">{successMsg}</span>
+              </div>
+            )}
+
             {/* Quiz Code */}
             <div>
               <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1.5">
@@ -184,45 +231,35 @@ export default function JoinPage() {
               <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1.5">
                 Phone Number
               </label>
-              <div className="relative">
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+91 XXXXX XXXXX"
-                  required
-                  className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-mono-tabular text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:bg-white transition-all"
-                />
-              </div>
-              <span className="text-[11px] text-neutral-400 mt-1 block">
-                Used to verify attempt integrity (no duplicate attempts allowed)
-              </span>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="e.g. 9876543210"
+                required
+                className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-mono-tabular text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:bg-white transition-all"
+              />
+              <p className="text-[11px] text-neutral-400 mt-1">
+                Each phone number is validated by the host machine and allows one attempt.
+              </p>
             </div>
 
-            <div className="pt-2">
-              <Button
-                type="submit"
-                variant="primary"
-                size="lg"
-                className="w-full text-sm font-semibold"
-                isLoading={isLoading}
-              >
-                Enter Quiz
-              </Button>
-            </div>
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              isLoading={isLoading}
+              className="w-full mt-2 font-semibold cursor-pointer"
+            >
+              {isLoading ? 'Verifying with host machine...' : 'Start Quiz'}
+            </Button>
           </form>
         </Card>
-
-        {/* Security Notice */}
-        <div className="mt-6 flex items-center justify-center gap-2 text-xs text-neutral-400 text-center font-normal">
-          <Shield className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-          <span>Browser focus loss and tab-switch telemetry active during session.</span>
-        </div>
       </div>
 
-      {/* Bottom Footer */}
-      <footer className="max-w-md mx-auto w-full text-center text-xs text-neutral-400">
-        BugBusters Platform • Technica Symposium
+      {/* Footer */}
+      <footer className="max-w-md mx-auto w-full text-center text-xs text-neutral-400 py-4">
+        <span>Bug Busters Technical Symposium</span>
       </footer>
     </div>
   );

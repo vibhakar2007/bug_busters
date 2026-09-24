@@ -64,7 +64,7 @@ export const SubmitModal: React.FC<SubmitModalProps> = ({
 
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-neutral-200">
           <Button variant="outline" size="md" onClick={onClose} disabled={isSubmitting}>
-            Review Answers
+            Keep Answering
           </Button>
           <Button variant="primary" size="md" onClick={onConfirm} isLoading={isSubmitting}>
             Confirm & Submit

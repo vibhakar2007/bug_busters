@@ -27,11 +27,22 @@ export default function ParticipantsAdminPage() {
   };
 
   const handleFlagToggle = async (id: number, currentStatus: string) => {
-    const newStatus = currentStatus === 'flagged' ? 'active' : 'flagged';
-    const updated = await participantService.updateParticipant(id, {
-      status: newStatus as 'active' | 'flagged',
-    });
-    setSelectedParticipant(updated);
+    if (currentStatus === 'flagged') {
+      const target = participants.find((p) => p.participant_id === id);
+      const isCompleted = target?.status === 'completed' || Boolean(target?.end_time);
+      const updated = await participantService.updateParticipant(id, {
+        status: isCompleted ? 'completed' : 'active',
+        violation_count: 0,
+        last_activity_description: 'Flag cleared by admin',
+      });
+      setSelectedParticipant(updated);
+    } else {
+      const updated = await participantService.updateParticipant(id, {
+        status: 'flagged',
+        last_activity_description: 'Manually flagged by admin',
+      });
+      setSelectedParticipant(updated);
+    }
   };
 
   return (
@@ -55,6 +66,7 @@ export default function ParticipantsAdminPage() {
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         onFlagToggle={handleFlagToggle}
+        initialTab="violations"
       />
     </div>
   );

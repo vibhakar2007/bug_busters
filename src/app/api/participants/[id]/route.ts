@@ -3,6 +3,23 @@ import { Participant } from '@/types/participant';
 import { readJsonData, updateJsonData } from '@/lib/server/jsonStorage';
 import participantsFallback from '@/data/participants.json';
 
+function corsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, ngrok-skip-browser-warning, bypass-tunnel-reminder',
+    'ngrok-skip-browser-warning': 'true',
+    'bypass-tunnel-reminder': 'true',
+  };
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders(),
+  });
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -16,10 +33,10 @@ export async function GET(
 
   const found = participants.find((p) => p.participant_id === participantId);
   if (!found) {
-    return NextResponse.json({ error: 'Participant not found' }, { status: 404 });
+    return NextResponse.json({ error: 'Participant not found' }, { status: 404, headers: corsHeaders() });
   }
 
-  return NextResponse.json(found);
+  return NextResponse.json(found, { headers: corsHeaders() });
 }
 
 export async function PUT(
@@ -64,7 +81,7 @@ export async function PUT(
             ...data,
             last_activity_time: new Date().toISOString(),
           };
-          if (updated.violation_count >= 3 && updated.status === 'active') {
+          if (data.status !== 'active' && data.status !== 'completed' && updated.violation_count >= 3 && updated.status === 'active') {
             updated.status = 'flagged';
           }
           resultParticipant = updated;
@@ -75,9 +92,9 @@ export async function PUT(
       }
     );
 
-    return NextResponse.json(resultParticipant);
+    return NextResponse.json(resultParticipant, { headers: corsHeaders() });
   } catch (error) {
     console.error('Failed to update participant:', error);
-    return NextResponse.json({ error: 'Failed to update participant' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update participant' }, { status: 500, headers: corsHeaders() });
   }
 }

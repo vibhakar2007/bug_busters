@@ -7,7 +7,8 @@ const STORAGE_KEY_PARTICIPANTS = 'bugbusters_participants';
 const STORAGE_KEY_RESULTS = 'bugbusters_results';
 
 function normalizePhone(phone: string): string {
-  return phone.replace(/[\s\-\(\)]/g, '').trim();
+  const digits = String(phone || '').replace(/\D/g, '').trim();
+  return digits.length >= 10 ? digits.slice(-10) : digits;
 }
 
 class ParticipantService {
@@ -27,9 +28,13 @@ class ParticipantService {
 
   public async syncFromServer(): Promise<void> {
     try {
+      const tunnelHeaders = {
+        'ngrok-skip-browser-warning': 'true',
+        'bypass-tunnel-reminder': 'true',
+      };
       const [pRes, rRes] = await Promise.all([
-        fetch('/api/participants'),
-        fetch('/api/results'),
+        fetch('/api/participants?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', { headers: tunnelHeaders }),
+        fetch('/api/results?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', { headers: tunnelHeaders }),
       ]);
 
       if (pRes.ok) {
@@ -182,11 +187,21 @@ class ParticipantService {
     // Persist to server /data/participants.json
     if (typeof window !== 'undefined') {
       try {
-        await fetch('/api/participants', {
+        const res = await fetch('/api/participants?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+            'bypass-tunnel-reminder': 'true',
+          },
           body: JSON.stringify(input),
         });
+        if (res.ok) {
+          const serverCreated: Participant = await res.json();
+          if (serverCreated && serverCreated.participant_id) {
+            newParticipant.participant_id = serverCreated.participant_id;
+          }
+        }
       } catch (err) {
         console.warn('Failed to sync participant to server API:', err);
       }
@@ -212,7 +227,12 @@ class ParticipantService {
       last_activity_time: new Date().toISOString(),
     };
 
-    if (updated.violation_count >= 3 && updated.status === 'active') {
+    if (
+      data.status !== 'active' &&
+      data.status !== 'completed' &&
+      updated.violation_count >= 3 &&
+      updated.status === 'active'
+    ) {
       updated.status = 'flagged';
     }
 
@@ -222,9 +242,13 @@ class ParticipantService {
     // Persist to server /data/participants.json
     if (typeof window !== 'undefined') {
       try {
-        await fetch(`/api/participants/${id}`, {
+        await fetch(`/api/participants/${id}?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+            'bypass-tunnel-reminder': 'true',
+          },
           body: JSON.stringify(data),
         });
       } catch (err) {
@@ -259,9 +283,13 @@ class ParticipantService {
 
     if (typeof window !== 'undefined') {
       try {
-        await fetch(`/api/participants/${id}`, {
+        await fetch(`/api/participants/${id}?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+            'bypass-tunnel-reminder': 'true',
+          },
           body: JSON.stringify({
             violation_count: newViolationCount,
             status: isFlagged ? 'flagged' : current.status,
@@ -291,9 +319,13 @@ class ParticipantService {
     // Persist to server /data/results.json
     if (typeof window !== 'undefined') {
       try {
-        await fetch('/api/results', {
+        await fetch('/api/results?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+            'bypass-tunnel-reminder': 'true',
+          },
           body: JSON.stringify(result),
         });
       } catch (err) {

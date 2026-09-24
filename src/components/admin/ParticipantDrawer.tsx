@@ -33,7 +33,7 @@ interface ParticipantDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onFlagToggle?: (participantId: number, currentStatus: string) => void;
-  initialTab?: 'activity' | 'review';
+  initialTab?: 'violations' | 'activity' | 'review';
 }
 
 export const ParticipantDrawer: React.FC<ParticipantDrawerProps> = ({
@@ -41,9 +41,9 @@ export const ParticipantDrawer: React.FC<ParticipantDrawerProps> = ({
   isOpen,
   onClose,
   onFlagToggle,
-  initialTab = 'activity',
+  initialTab = 'violations',
 }) => {
-  const [userTab, setUserTab] = useState<'activity' | 'review' | null>(null);
+  const [userTab, setUserTab] = useState<'violations' | 'activity' | 'review' | null>(null);
   const [prevParticipantId, setPrevParticipantId] = useState<number | null>(null);
 
   if (participant && participant.participant_id !== prevParticipantId) {
@@ -65,8 +65,27 @@ export const ParticipantDrawer: React.FC<ParticipantDrawerProps> = ({
         if (isMounted) setLoading(true);
       });
 
+      const fetchParticipantActivities = async () => {
+        try {
+          const res = await fetch(`/api/activity?participant_id=${participant.participant_id}&ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true`, {
+            headers: {
+              'Accept': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+              'bypass-tunnel-reminder': 'true',
+            },
+          });
+          if (res.ok) {
+            const data: ParticipantActivity[] = await res.json();
+            if (Array.isArray(data)) return data;
+          }
+        } catch (e) {
+          console.warn('Direct fetch of participant activity failed:', e);
+        }
+        return activityService.getParticipantActivity(participant.participant_id);
+      };
+
       Promise.all([
-        activityService.getParticipantActivity(participant.participant_id),
+        fetchParticipantActivities(),
         participantService.getParticipantResult(participant.participant_id),
       ]).then(([acts, res]) => {
         if (isMounted) {
@@ -120,6 +139,43 @@ export const ParticipantDrawer: React.FC<ParticipantDrawerProps> = ({
         return <Clock className="w-3.5 h-3.5 text-neutral-400" />;
     }
   };
+
+  const formatViolationTitle = (type: string) => {
+    switch (type) {
+      case 'tab_switch':
+        return 'Tab Switch / Window Inactive';
+      case 'fullscreen_exit':
+        return 'Fullscreen Mode Exited';
+      case 'focus_loss':
+        return 'Browser Focus Lost';
+      case 'copy_attempt':
+        return 'Copy Attempt Detected';
+      case 'paste_attempt':
+        return 'Paste Attempt Detected';
+      case 'dev_tools':
+        return 'Developer Tools / Inspect Opened';
+      case 'context_menu':
+        return 'Right-Click Context Menu';
+      default:
+        return type.replace(/_/g, ' ');
+    }
+  };
+
+  const violationEvents = activities.filter((act) => {
+    return (
+      act.severity === 'violation' ||
+      act.severity === 'warning' ||
+      [
+        'tab_switch',
+        'fullscreen_exit',
+        'focus_loss',
+        'copy_attempt',
+        'paste_attempt',
+        'dev_tools',
+        'context_menu',
+      ].includes(act.event_type)
+    );
+  });
 
   const filteredReviewItems = (result?.review_items || []).filter((item) => {
     if (reviewFilter === 'correct') return item.is_correct;
@@ -186,73 +242,232 @@ export const ParticipantDrawer: React.FC<ParticipantDrawerProps> = ({
               <div className="p-3 bg-white border border-neutral-200/80 rounded-xl shadow-2xs">
                 <span className="text-[11px] text-neutral-400 font-medium block">Progress</span>
                 <span className="text-base font-bold text-neutral-900 font-mono-tabular">
-                  {participant.current_question || 0}/{participant.total_questions || 10}
+                  {participant.current_question || 0}/{participant.total_questions || 40}
                 </span>
               </div>
 
               <div className="p-3 bg-white border border-neutral-200/80 rounded-xl shadow-2xs">
                 <span className="text-[11px] text-neutral-400 font-medium block">Score (+1 / 0)</span>
                 <span className="text-base font-bold text-neutral-900 font-mono-tabular">
-                  {participant.score !== null ? `${participant.score} / ${participant.total_questions || 10}` : 'In Progress'}
+                  {participant.score !== null ? `${participant.score} / ${participant.total_questions || 40}` : 'In Progress'}
                 </span>
               </div>
 
-              <div
+              <button
+                type="button"
+                onClick={() => setUserTab('violations')}
                 className={cn(
-                  'p-3 border rounded-xl shadow-2xs',
-                  participant.violation_count > 0
-                    ? 'bg-rose-50 border-rose-200 text-rose-900'
-                    : 'bg-white border-neutral-200/80 text-neutral-900'
+                  'p-3 border rounded-xl shadow-2xs text-center transition-all cursor-pointer',
+                  (participant.violation_count > 0 || violationEvents.length > 0)
+                    ? 'bg-rose-50 border-rose-200 text-rose-900 hover:bg-rose-100/70'
+                    : 'bg-white border-neutral-200/80 text-neutral-900 hover:bg-neutral-50'
                 )}
+                title="Click to view full violations audit"
               >
-                <span className="text-[11px] font-medium block opacity-70">Violations</span>
+                <span className="text-[11px] font-medium block opacity-70">Violations (View)</span>
                 <span className="text-base font-bold font-mono-tabular flex items-center justify-center gap-1">
-                  {participant.violation_count > 0 && <AlertTriangle className="w-3.5 h-3.5" />}
-                  {participant.violation_count}
+                  {(participant.violation_count > 0 || violationEvents.length > 0) && (
+                    <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                  )}
+                  {violationEvents.length || participant.violation_count}
                 </span>
-              </div>
+              </button>
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex items-center gap-2 mt-5 p-1 bg-neutral-100 rounded-xl text-xs font-semibold">
+            <div className="flex items-center gap-1.5 mt-5 p-1 bg-neutral-100 rounded-xl text-xs font-semibold">
               <button
-                onClick={() => setUserTab('review')}
+                onClick={() => setUserTab('violations')}
                 className={cn(
-                  'flex-1 py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all',
-                  activeTab === 'review'
+                  'flex-1 py-2 px-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer',
+                  activeTab === 'violations'
                     ? 'bg-white text-neutral-900 shadow-xs font-bold'
                     : 'text-neutral-500 hover:text-neutral-900'
                 )}
               >
-                <ListChecks className="w-3.5 h-3.5" />
-                <span>Question Review</span>
-                {result && (
-                  <span className="text-[10px] px-1.5 py-0.2 bg-neutral-200 text-neutral-800 rounded-md font-mono-tabular">
-                    {result.score}/{result.total_questions}
-                  </span>
-                )}
+                <AlertTriangle
+                  className={cn(
+                    'w-3.5 h-3.5',
+                    (participant.violation_count > 0 || violationEvents.length > 0)
+                      ? 'text-rose-600'
+                      : 'text-neutral-400'
+                  )}
+                />
+                <span>Violations</span>
+                <span
+                  className={cn(
+                    'text-[10px] px-1.5 py-0.2 rounded-md font-mono-tabular font-bold',
+                    (participant.violation_count > 0 || violationEvents.length > 0)
+                      ? 'bg-rose-100 text-rose-700'
+                      : 'bg-neutral-200 text-neutral-700'
+                  )}
+                >
+                  {violationEvents.length || participant.violation_count}
+                </span>
               </button>
 
               <button
                 onClick={() => setUserTab('activity')}
                 className={cn(
-                  'flex-1 py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all',
+                  'flex-1 py-2 px-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer',
                   activeTab === 'activity'
                     ? 'bg-white text-neutral-900 shadow-xs font-bold'
                     : 'text-neutral-500 hover:text-neutral-900'
                 )}
               >
                 <History className="w-3.5 h-3.5" />
-                <span>Activity Trail</span>
+                <span>All Events</span>
                 <span className="text-[10px] px-1.5 py-0.2 bg-neutral-200 text-neutral-800 rounded-md font-mono-tabular">
                   {activities.length}
                 </span>
+              </button>
+
+              <button
+                onClick={() => setUserTab('review')}
+                className={cn(
+                  'flex-1 py-2 px-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer',
+                  activeTab === 'review'
+                    ? 'bg-white text-neutral-900 shadow-xs font-bold'
+                    : 'text-neutral-500 hover:text-neutral-900'
+                )}
+              >
+                <ListChecks className="w-3.5 h-3.5" />
+                <span>Review</span>
+                {result && (
+                  <span className="text-[10px] px-1.5 py-0.2 bg-neutral-200 text-neutral-800 rounded-md font-mono-tabular">
+                    {result.score}/{result.total_questions}
+                  </span>
+                )}
               </button>
             </div>
           </div>
 
           {/* Body content */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* TAB: VIOLATIONS AUDIT */}
+            {activeTab === 'violations' && (
+              <div className="space-y-4">
+                {/* Status Alert Banner */}
+                {participant.status === 'flagged' ? (
+                  <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3">
+                    <AlertOctagon className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="text-sm font-bold text-rose-950">
+                          Disqualified • Participant Flagged
+                        </h4>
+                        <span className="text-[10px] uppercase font-bold bg-rose-200/80 text-rose-800 px-2 py-0.5 rounded-full">
+                          Flag Active
+                        </span>
+                      </div>
+                      <p className="text-xs text-rose-800 mt-1 leading-relaxed">
+                        This participant exceeded test violation limits or was manually flagged. Their result is excluded from the leaderboard. Click "Clear Flag" below to reinstate the participant.
+                      </p>
+                    </div>
+                  </div>
+                ) : (participant.violation_count > 0 || violationEvents.length > 0) ? (
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="text-sm font-bold text-amber-950">
+                          Integrity Warnings ({participant.violation_count} recorded)
+                        </h4>
+                        <span className="text-[10px] uppercase font-bold bg-amber-200/80 text-amber-800 px-2 py-0.5 rounded-full">
+                          Warning State
+                        </span>
+                      </div>
+                      <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+                        The participant triggered browser focus loss or window blur. Accumulating 3 violations will trigger automatic disqualification.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                    <div>
+                      <h4 className="text-sm font-bold text-emerald-950">
+                        Clean Test Integrity
+                      </h4>
+                      <p className="text-xs text-emerald-700">
+                        Zero tab switches, clipboard copies/pastes, or focus interruptions recorded.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Violation Items List */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+                      Recorded Violations & Infractions ({violationEvents.length})
+                    </h3>
+                    {violationEvents.length > 0 && (
+                      <span className="text-[11px] text-rose-600 font-bold font-mono-tabular">
+                        {violationEvents.filter((v) => v.severity === 'violation').length} critical •{' '}
+                        {violationEvents.filter((v) => v.severity !== 'violation').length} warnings
+                      </span>
+                    )}
+                  </div>
+
+                  {loading ? (
+                    <div className="py-8 text-center text-xs text-neutral-400">
+                      Loading violation events...
+                    </div>
+                  ) : violationEvents.length === 0 ? (
+                    <div className="py-10 text-center space-y-2 bg-neutral-50 rounded-2xl border border-neutral-150 p-6">
+                      <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
+                      <p className="text-xs font-bold text-neutral-800">No violations logged</p>
+                      <p className="text-[11px] text-neutral-500 max-w-sm mx-auto">
+                        This participant has not triggered any anti-cheating detections during the quiz.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {violationEvents.map((v, i) => (
+                        <div
+                          key={v.activity_id || i}
+                          className="p-3.5 bg-rose-50/60 border border-rose-200/90 rounded-xl space-y-2 shadow-2xs"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-bold text-rose-950 flex items-center gap-1.5">
+                              {getActivityIcon(v.event_type)}
+                              <span>{formatViolationTitle(v.event_type)}</span>
+                            </span>
+                            <span className="text-[11px] font-mono-tabular text-neutral-500 shrink-0">
+                              {formatTimestamp(v.event_time)}
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-rose-900 leading-relaxed font-mono-tabular bg-white/70 p-2 rounded-lg border border-rose-100">
+                            {v.details || 'Integrity violation detected'}
+                          </p>
+
+                          <div className="flex items-center gap-2 pt-0.5 text-[11px] text-neutral-600">
+                            {v.question_id && (
+                              <span className="bg-white border border-neutral-200 px-2 py-0.5 rounded-md font-mono-tabular font-medium">
+                                Question #{v.question_id}
+                              </span>
+                            )}
+                            <span
+                              className={cn(
+                                'px-2 py-0.5 rounded-md font-bold text-[10px] uppercase tracking-wider',
+                                v.severity === 'violation'
+                                  ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                                  : 'bg-amber-100 text-amber-800 border border-amber-200'
+                              )}
+                            >
+                              {v.severity}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* TAB: QUESTION REVIEW */}
             {activeTab === 'review' && (
               <div className="space-y-4">
@@ -516,17 +731,29 @@ export const ParticipantDrawer: React.FC<ParticipantDrawerProps> = ({
           {/* Footer action */}
           <div className="p-4 border-t border-neutral-200 bg-neutral-50/50 flex items-center justify-between gap-3">
             <Button
-              variant="outline"
+              variant={participant.status === 'flagged' ? 'primary' : 'outline'}
               size="sm"
               onClick={() => onFlagToggle?.(participant.participant_id, participant.status)}
-              className="gap-1.5"
+              className={cn(
+                'gap-1.5 cursor-pointer font-semibold',
+                participant.status === 'flagged'
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-transparent shadow-xs'
+                  : 'border-neutral-300 text-rose-700 hover:bg-rose-50'
+              )}
             >
-              <Flag className="w-3.5 h-3.5" />
-              <span>
-                {participant.status === 'flagged' ? 'Clear Flag' : 'Flag Participant'}
-              </span>
+              {participant.status === 'flagged' ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Clear Flag & Reinstate</span>
+                </>
+              ) : (
+                <>
+                  <Flag className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Flag Participant</span>
+                </>
+              )}
             </Button>
-            <Button variant="secondary" size="sm" onClick={onClose}>
+            <Button variant="secondary" size="sm" onClick={onClose} className="cursor-pointer">
               Close Audit
             </Button>
           </div>

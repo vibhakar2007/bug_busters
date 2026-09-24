@@ -21,7 +21,13 @@ class QuizService {
 
   private async syncFromServer() {
     try {
-      const res = await fetch('/api/quizzes');
+      const res = await fetch('/api/quizzes?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', {
+        headers: {
+          'Accept': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+          'bypass-tunnel-reminder': 'true',
+        },
+      });
       if (res.ok) {
         const data: Quiz[] = await res.json();
         if (Array.isArray(data) && data.length > 0) {
@@ -112,9 +118,13 @@ class QuizService {
     // Persist to server /data/quizzes.json
     if (typeof window !== 'undefined') {
       try {
-        await fetch('/api/quizzes', {
+        await fetch('/api/quizzes?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+            'bypass-tunnel-reminder': 'true',
+          },
           body: JSON.stringify(newQuiz),
         });
       } catch (err) {
@@ -142,9 +152,13 @@ class QuizService {
     // Persist to server /data/quizzes.json
     if (typeof window !== 'undefined') {
       try {
-        await fetch(`/api/quizzes/${id}`, {
+        await fetch(`/api/quizzes/${id}?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+            'bypass-tunnel-reminder': 'true',
+          },
           body: JSON.stringify(data),
         });
       } catch (err) {
@@ -169,8 +183,12 @@ class QuizService {
     // Persist deletion to server /data/quizzes.json
     if (typeof window !== 'undefined') {
       try {
-        await fetch(`/api/quizzes/${id}`, {
+        await fetch(`/api/quizzes/${id}?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true`, {
           method: 'DELETE',
+          headers: {
+            'ngrok-skip-browser-warning': 'true',
+            'bypass-tunnel-reminder': 'true',
+          },
         });
       } catch (err) {
         console.warn('Failed to persist quiz deletion to server API:', err);
@@ -207,9 +225,13 @@ class QuizService {
     // Persist to server /data/quizzes.json
     if (typeof window !== 'undefined') {
       try {
-        await fetch(`/api/quizzes/${id}`, {
+        await fetch(`/api/quizzes/${id}?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+            'bypass-tunnel-reminder': 'true',
+          },
           body: JSON.stringify({ duration_minutes: durationMinutes }),
         });
       } catch (err) {

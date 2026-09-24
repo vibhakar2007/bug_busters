@@ -3,12 +3,39 @@ import { ParticipantActivity, RecordActivityInput } from '@/types/activity';
 import { readJsonData, updateJsonData } from '@/lib/server/jsonStorage';
 import activityFallback from '@/data/activity.json';
 
-export async function GET() {
+function corsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, ngrok-skip-browser-warning, bypass-tunnel-reminder',
+    'ngrok-skip-browser-warning': 'true',
+    'bypass-tunnel-reminder': 'true',
+  };
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders(),
+  });
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const participantIdParam = searchParams.get('participant_id');
+
   const activities = await readJsonData<ParticipantActivity[]>(
     'activity.json',
     activityFallback as unknown as ParticipantActivity[]
   );
-  return NextResponse.json(activities);
+
+  if (participantIdParam) {
+    const pid = Number(participantIdParam);
+    const filtered = activities.filter((a) => a.participant_id === pid);
+    return NextResponse.json(filtered, { headers: corsHeaders() });
+  }
+
+  return NextResponse.json(activities, { headers: corsHeaders() });
 }
 
 export async function POST(request: Request) {
@@ -51,9 +78,9 @@ export async function POST(request: Request) {
       }
     );
 
-    return NextResponse.json(recordedActivity, { status: 201 });
+    return NextResponse.json(recordedActivity, { status: 201, headers: corsHeaders() });
   } catch (error) {
     console.error('Failed to record activity:', error);
-    return NextResponse.json({ error: 'Failed to record activity' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to record activity' }, { status: 500, headers: corsHeaders() });
   }
 }
