@@ -39,6 +39,7 @@ export function randomizeQuestionOptions(q: Question): SessionQuestion {
 
   return {
     question_id: q.question_id,
+    concept_id: q.concept_id,
     question: q.question,
     code_snippet: q.code_snippet,
     category: q.category || (qType === 'debug' ? 'debugging' : 'quiz'),
@@ -48,6 +49,31 @@ export function randomizeQuestionOptions(q: Question): SessionQuestion {
     correct_option: q.correct_option.toUpperCase(),
     explanation: q.explanation || 'No explanation provided.',
   };
+}
+
+export function getQuestionAnswer(
+  q: SessionQuestion,
+  answers: Record<string | number, string> | undefined | null
+): string | null {
+  if (!answers) return null;
+  const direct = answers[q.question_id];
+  if (direct && typeof direct === 'string' && direct.trim().length > 0) {
+    return direct.trim().toUpperCase();
+  }
+  if (q.concept_id) {
+    const concept = (answers as Record<string, string>)[q.concept_id];
+    if (concept && typeof concept === 'string' && concept.trim().length > 0) {
+      return concept.trim().toUpperCase();
+    }
+  }
+  return null;
+}
+
+export function isQuestionAnswered(
+  q: SessionQuestion,
+  answers: Record<string | number, string> | undefined | null
+): boolean {
+  return getQuestionAnswer(q, answers) !== null;
 }
 
 export async function createOrRestoreQuizSession(
@@ -69,16 +95,8 @@ export async function createOrRestoreQuizSession(
           const now = Date.now();
           const endMs = new Date(session.endTimeExpected).getTime();
 
-          // Only restore an unsubmitted session that has not expired
-          if (!session.isSubmitted && now < endMs) {
-            // Check if duration was updated in quiz since session was created
-            if (quiz.duration_minutes !== session.durationMinutes) {
-              const startMs = new Date(session.startTime).getTime();
-              const updatedEndMs = startMs + quiz.duration_minutes * 60 * 1000;
-              session.durationMinutes = quiz.duration_minutes;
-              session.endTimeExpected = new Date(updatedEndMs).toISOString();
-              saveQuizSession(session);
-            }
+          // Restore any unsubmitted active session
+          if (!session.isSubmitted) {
             return session;
           }
         }

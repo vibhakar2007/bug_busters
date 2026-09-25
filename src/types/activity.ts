@@ -8,7 +8,9 @@ export type ActivityEventType =
   | 'dev_tools'
   | 'answer_selected'
   | 'quiz_started'
-  | 'quiz_submitted';
+  | 'quiz_submitted'
+  | 'flag_cleared'
+  | 'flag_added';
 
 /**
  * Maps directly to Supabase TABLE: participant_activity

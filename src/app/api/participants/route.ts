@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { Participant, CreateParticipantInput } from '@/types/participant';
-import { readJsonData, updateJsonData } from '@/lib/server/jsonStorage';
+import { Quiz } from '@/types/quiz';
+import { readJsonData, updateJsonData, getDataVersion } from '@/lib/server/jsonStorage';
 import participantsFallback from '@/data/participants.json';
+import quizzesFallback from '@/data/quizzes.json';
 
 function normalizePhone(phone: string): string {
   const digits = String(phone || '').replace(/\D/g, '').trim();
@@ -12,7 +14,7 @@ function corsHeaders() {
   return {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, ngrok-skip-browser-warning, bypass-tunnel-reminder',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, ngrok-skip-browser-warning, bypass-tunnel-reminder, if-none-match',
     'ngrok-skip-browser-warning': 'true',
     'bypass-tunnel-reminder': 'true',
   };
@@ -49,13 +51,40 @@ export async function GET(request: Request) {
     return NextResponse.json(found, { headers: corsHeaders() });
   }
 
-  return NextResponse.json(participants, { headers: corsHeaders() });
+  // ETag support for polling
+  const version = getDataVersion('participants.json');
+  const etag = `"${version}"`;
+  const ifNoneMatch = request.headers.get('if-none-match');
+
+  if (ifNoneMatch && ifNoneMatch === etag) {
+    return new NextResponse(null, { status: 304, headers: corsHeaders() });
+  }
+
+  const headers = {
+    ...corsHeaders(),
+    'ETag': etag,
+    'Cache-Control': 'no-cache',
+  };
+
+  return NextResponse.json(participants, { headers });
 }
 
 export async function POST(request: Request) {
   try {
     const input: CreateParticipantInput = await request.json();
     const norm = normalizePhone(input.phone);
+
+    const quizzes = await readJsonData<Quiz[]>(
+      'quizzes.json',
+      quizzesFallback as unknown as Quiz[]
+    );
+    const quiz = quizzes.find((q) => q.quiz_id === input.quiz_id);
+    if (quiz && quiz.status === 'closed') {
+      return NextResponse.json(
+        { error: 'Event Closed. This quiz is closed and no longer accepting participants.' },
+        { status: 400, headers: corsHeaders() }
+      );
+    }
 
     let createdOrExisting: Participant | null = null;
     let isAlreadyCompleted = false;

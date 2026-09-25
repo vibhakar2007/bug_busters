@@ -111,7 +111,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: 'This quiz is closed and is no longer accepting participants.',
+          error: 'Event Closed. This quiz is closed and is no longer accepting participants.',
         },
         { status: 400, headers: corsHeaders() }
       );

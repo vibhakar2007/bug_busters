@@ -1,6 +1,4 @@
 import { Participant, CreateParticipantInput, ParticipantResult } from '@/types/participant';
-import { MOCK_PARTICIPANTS } from '@/lib/mock/participants';
-import { MOCK_RESULTS } from '@/lib/mock/results';
 import { realtimeBus } from './eventBus';
 
 const STORAGE_KEY_PARTICIPANTS = 'bugbusters_participants';
@@ -14,6 +12,7 @@ function normalizePhone(phone: string): string {
 class ParticipantService {
   private participants: Participant[] = [];
   private results: ParticipantResult[] = [];
+  private activeSyncPromise: Promise<void> | null = null;
 
   constructor() {
     this.loadParticipants();
@@ -27,35 +26,46 @@ class ParticipantService {
   }
 
   public async syncFromServer(): Promise<void> {
-    try {
-      const tunnelHeaders = {
-        'ngrok-skip-browser-warning': 'true',
-        'bypass-tunnel-reminder': 'true',
-      };
-      const [pRes, rRes] = await Promise.all([
-        fetch('/api/participants?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', { headers: tunnelHeaders }),
-        fetch('/api/results?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', { headers: tunnelHeaders }),
-      ]);
-
-      if (pRes.ok) {
-        const pData: Participant[] = await pRes.json();
-        if (Array.isArray(pData)) {
-          this.participants = pData;
-          this.saveParticipantsToLocal();
-          realtimeBus.emit('participants_updated', this.participants);
-        }
-      }
-
-      if (rRes.ok) {
-        const rData: ParticipantResult[] = await rRes.json();
-        if (Array.isArray(rData)) {
-          this.results = rData;
-          this.saveResultsToLocal();
-        }
-      }
-    } catch {
-      // Offline / SSR - silently retain local cache
+    if (this.activeSyncPromise) {
+      return this.activeSyncPromise;
     }
+
+    this.activeSyncPromise = (async () => {
+      try {
+        const tunnelHeaders = {
+          'Accept': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+          'bypass-tunnel-reminder': 'true',
+        };
+        const [pRes, rRes] = await Promise.all([
+          fetch('/api/participants?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', { headers: tunnelHeaders }),
+          fetch('/api/results?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', { headers: tunnelHeaders }),
+        ]);
+
+        if (pRes.ok) {
+          const pData: Participant[] = await pRes.json();
+          if (Array.isArray(pData)) {
+            this.participants = pData;
+            this.saveParticipantsToLocal();
+            realtimeBus.emit('participants_updated', this.participants);
+          }
+        }
+
+        if (rRes.ok) {
+          const rData: ParticipantResult[] = await rRes.json();
+          if (Array.isArray(rData)) {
+            this.results = rData;
+            this.saveResultsToLocal();
+          }
+        }
+      } catch {
+        // Offline / SSR - silently retain local cache
+      } finally {
+        this.activeSyncPromise = null;
+      }
+    })();
+
+    return this.activeSyncPromise;
   }
 
   private loadParticipants() {
@@ -128,7 +138,36 @@ class ParticipantService {
 
   public async getParticipant(id: number): Promise<Participant | null> {
     this.loadParticipants();
-    const p = this.participants.find((item) => item.participant_id === id);
+    let p = this.participants.find((item) => item.participant_id === id);
+
+    // If not in local cache, fetch directly from host machine API
+    if (!p && typeof window !== 'undefined') {
+      try {
+        const res = await fetch(`/api/participants/${id}?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true`, {
+          headers: {
+            'Accept': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+            'bypass-tunnel-reminder': 'true',
+          },
+        });
+        if (res.ok) {
+          const serverP: Participant = await res.json();
+          if (serverP && serverP.participant_id) {
+            p = serverP;
+            const existingIdx = this.participants.findIndex((item) => item.participant_id === id);
+            if (existingIdx >= 0) {
+              this.participants[existingIdx] = serverP;
+            } else {
+              this.participants.push(serverP);
+            }
+            this.saveParticipants();
+          }
+        }
+      } catch (err) {
+        console.warn(`Failed to fetch participant ${id} from server:`, err);
+      }
+    }
+
     return p ? { ...p } : null;
   }
 
@@ -160,6 +199,40 @@ class ParticipantService {
       return existing;
     }
 
+    // Attempt authoritative creation on server first
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/participants?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+            'bypass-tunnel-reminder': 'true',
+          },
+          body: JSON.stringify(input),
+        });
+
+        if (res.ok) {
+          const serverCreated: Participant = await res.json();
+          if (serverCreated && serverCreated.participant_id) {
+            const exIdx = this.participants.findIndex(
+              (p) => p.participant_id === serverCreated.participant_id
+            );
+            if (exIdx >= 0) {
+              this.participants[exIdx] = serverCreated;
+            } else {
+              this.participants.unshift(serverCreated);
+            }
+            this.saveParticipants();
+            return serverCreated;
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to register participant on server API:', err);
+      }
+    }
+
+    // Fallback ID generation if offline
     const nextId =
       this.participants.length > 0
         ? Math.max(...this.participants.map((p) => p.participant_id)) + 1
@@ -176,37 +249,13 @@ class ParticipantService {
       status: 'active',
       violation_count: 0,
       current_question: 1,
-      total_questions: input.total_questions || 5,
+      total_questions: input.total_questions || 40,
       last_activity_time: new Date().toISOString(),
       last_activity_description: 'Started the quiz',
     };
 
     this.participants.unshift(newParticipant);
     this.saveParticipants();
-
-    // Persist to server /data/participants.json
-    if (typeof window !== 'undefined') {
-      try {
-        const res = await fetch('/api/participants?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'ngrok-skip-browser-warning': 'true',
-            'bypass-tunnel-reminder': 'true',
-          },
-          body: JSON.stringify(input),
-        });
-        if (res.ok) {
-          const serverCreated: Participant = await res.json();
-          if (serverCreated && serverCreated.participant_id) {
-            newParticipant.participant_id = serverCreated.participant_id;
-          }
-        }
-      } catch (err) {
-        console.warn('Failed to sync participant to server API:', err);
-      }
-    }
-
     return newParticipant;
   }
 
@@ -215,31 +264,68 @@ class ParticipantService {
     data: Partial<Participant>
   ): Promise<Participant> {
     this.loadParticipants();
-    const index = this.participants.findIndex((p) => p.participant_id === id);
+    let index = this.participants.findIndex((p) => p.participant_id === id);
+
+    // If not found in memory/storage, attempt to recover participant
+    if (index === -1 && typeof window !== 'undefined') {
+      try {
+        const res = await fetch(`/api/participants/${id}?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true`);
+        if (res.ok) {
+          const serverP: Participant = await res.json();
+          if (serverP && serverP.participant_id) {
+            this.participants.unshift(serverP);
+            index = 0;
+          }
+        }
+      } catch {
+        // Continue to fallback
+      }
+    }
+
+    let updated: Participant;
+
     if (index === -1) {
-      throw new Error(`Participant ${id} not found`);
+      // Resilient fallback - NEVER throw 'Participant not found'
+      updated = {
+        participant_id: id,
+        name: data.name || `Participant #${id}`,
+        phone: data.phone || '',
+        quiz_id: data.quiz_id || 1,
+        start_time: data.start_time || new Date().toISOString(),
+        end_time: data.end_time || null,
+        score: data.score ?? null,
+        status: data.status || 'active',
+        violation_count: data.violation_count || 0,
+        current_question: data.current_question || 1,
+        total_questions: data.total_questions || 40,
+        last_activity_time: new Date().toISOString(),
+        last_activity_description: data.last_activity_description || 'Active',
+        ...data,
+      };
+      this.participants.unshift(updated);
+    } else {
+      const current = this.participants[index];
+      updated = {
+        ...current,
+        ...data,
+        last_activity_time: new Date().toISOString(),
+      };
+
+      if (
+        data.status !== 'active' &&
+        data.status !== 'completed' &&
+        updated.violation_count >= 2 &&
+        updated.status === 'active'
+      ) {
+        updated.status = 'flagged';
+      }
+
+      this.participants[index] = updated;
     }
 
-    const current = this.participants[index];
-    const updated: Participant = {
-      ...current,
-      ...data,
-      last_activity_time: new Date().toISOString(),
-    };
-
-    if (
-      data.status !== 'active' &&
-      data.status !== 'completed' &&
-      updated.violation_count >= 3 &&
-      updated.status === 'active'
-    ) {
-      updated.status = 'flagged';
-    }
-
-    this.participants[index] = updated;
     this.saveParticipants();
 
-    // Persist to server /data/participants.json
+    // Persist to server /api/participants/${id}
     if (typeof window !== 'undefined') {
       try {
         await fetch(`/api/participants/${id}?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true`, {
@@ -261,24 +347,58 @@ class ParticipantService {
 
   public async incrementViolation(id: number, description?: string): Promise<Participant> {
     this.loadParticipants();
-    const index = this.participants.findIndex((p) => p.participant_id === id);
-    if (index === -1) {
-      throw new Error(`Participant ${id} not found`);
+    let index = this.participants.findIndex((p) => p.participant_id === id);
+
+    if (index === -1 && typeof window !== 'undefined') {
+      try {
+        const res = await fetch(`/api/participants/${id}?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true`);
+        if (res.ok) {
+          const serverP: Participant = await res.json();
+          if (serverP && serverP.participant_id) {
+            this.participants.unshift(serverP);
+            index = 0;
+          }
+        }
+      } catch {
+        // Fallback below
+      }
     }
 
-    const current = this.participants[index];
-    const newViolationCount = (current.violation_count || 0) + 1;
-    const isFlagged = newViolationCount >= 3;
+    let updated: Participant;
 
-    const updated: Participant = {
-      ...current,
-      violation_count: newViolationCount,
-      status: isFlagged ? 'flagged' : current.status,
-      last_activity_time: new Date().toISOString(),
-      last_activity_description: description || 'Violation detected',
-    };
+    if (index === -1) {
+      updated = {
+        participant_id: id,
+        name: `Participant #${id}`,
+        phone: '',
+        quiz_id: 1,
+        start_time: new Date().toISOString(),
+        end_time: null,
+        score: null,
+        status: 'active',
+        violation_count: 1,
+        current_question: 1,
+        total_questions: 40,
+        last_activity_time: new Date().toISOString(),
+        last_activity_description: description || 'Violation detected',
+      };
+      this.participants.unshift(updated);
+    } else {
+      const current = this.participants[index];
+      const newViolationCount = (current.violation_count || 0) + 1;
+      const isFlagged = newViolationCount >= 3;
 
-    this.participants[index] = updated;
+      updated = {
+        ...current,
+        violation_count: newViolationCount,
+        status: isFlagged ? 'flagged' : current.status,
+        last_activity_time: new Date().toISOString(),
+        last_activity_description: description || 'Violation detected',
+      };
+
+      this.participants[index] = updated;
+    }
+
     this.saveParticipants();
 
     if (typeof window !== 'undefined') {
@@ -291,8 +411,8 @@ class ParticipantService {
             'bypass-tunnel-reminder': 'true',
           },
           body: JSON.stringify({
-            violation_count: newViolationCount,
-            status: isFlagged ? 'flagged' : current.status,
+            violation_count: updated.violation_count,
+            status: updated.status,
             last_activity_description: description || 'Violation detected',
           }),
         });
@@ -316,7 +436,7 @@ class ParticipantService {
     }
     this.saveResults();
 
-    // Persist to server /data/results.json
+    // Persist to server /api/results
     if (typeof window !== 'undefined') {
       try {
         await fetch('/api/results?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', {
@@ -348,7 +468,36 @@ class ParticipantService {
 
   public async getParticipantResult(participantId: number): Promise<ParticipantResult | null> {
     this.loadResults();
-    const res = this.results.find((r) => r.participant_id === participantId);
+    let res = this.results.find((r) => r.participant_id === participantId);
+    if ((!res || !res.review_items || res.review_items.length === 0) && typeof window !== 'undefined') {
+      try {
+        const rRes = await fetch(
+          `/api/results?participant_id=${participantId}&full=true&ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true`,
+          {
+            headers: {
+              'Accept': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+              'bypass-tunnel-reminder': 'true',
+            },
+          }
+        );
+        if (rRes.ok) {
+          const singleResult: ParticipantResult = await rRes.json();
+          if (singleResult && singleResult.participant_id === participantId) {
+            const exIdx = this.results.findIndex((r) => r.participant_id === participantId);
+            if (exIdx >= 0) {
+              this.results[exIdx] = singleResult;
+            } else {
+              this.results.unshift(singleResult);
+            }
+            this.saveResultsToLocal();
+            return singleResult;
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch single participant result:', err);
+      }
+    }
     return res ? { ...res } : null;
   }
 
@@ -357,6 +506,20 @@ class ParticipantService {
     return realtimeBus.on<Participant[]>('participants_updated', (updated) => {
       callback([...updated]);
     });
+  }
+
+  public clearAll(): void {
+    this.participants = [];
+    this.results = [];
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(STORAGE_KEY_PARTICIPANTS);
+        localStorage.removeItem(STORAGE_KEY_RESULTS);
+      } catch {
+        // Ignore
+      }
+    }
+    realtimeBus.emit('participants_updated', []);
   }
 }
 

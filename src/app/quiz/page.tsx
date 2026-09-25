@@ -33,6 +33,7 @@ export default function QuizPage() {
     currentAnswer,
     totalQuestions,
     answeredCount,
+    unansweredIndices,
     isFirstQuestion,
     isLastQuestion,
     selectOption,
@@ -53,7 +54,6 @@ export default function QuizPage() {
     violationCount,
     activeWarning,
     dismissWarning,
-    requestFullscreen,
   } = useViolationMonitor({
     participantId: session ? session.participant_id : 0,
     participantName: session ? session.participant_name : '',
@@ -64,6 +64,12 @@ export default function QuizPage() {
       syncViolationCount();
     },
   });
+
+  const requestFullscreen = () => {
+    if (typeof document !== 'undefined' && document.documentElement?.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+  };
 
   const handleNext = () => {
     goToNext();
@@ -78,10 +84,10 @@ export default function QuizPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-10 h-10 border-2 border-neutral-200 border-t-neutral-900 rounded-full animate-spin mb-4" />
-        <h2 className="text-base font-semibold text-neutral-900">Configuring Quiz Session</h2>
-        <p className="text-xs text-neutral-500 mt-1">Randomizing questions & option sequences...</p>
+      <div className="min-h-screen bg-[#070916] flex flex-col items-center justify-center p-6 text-center text-slate-100">
+        <div className="w-10 h-10 border-2 border-[#283f5f] border-t-[#9db40c] rounded-full animate-spin mb-4" />
+        <h2 className="text-base font-bold text-white">Configuring Quiz Session</h2>
+        <p className="text-xs text-slate-400 mt-1">Randomizing questions & option sequences...</p>
       </div>
     );
   }
@@ -89,12 +95,12 @@ export default function QuizPage() {
   // Error state
   if (error || !session || !currentQuestion) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto">
-        <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 mb-4">
+      <div className="min-h-screen bg-[#070916] flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto text-slate-100">
+        <div className="w-12 h-12 rounded-2xl bg-rose-950/60 border border-rose-800 flex items-center justify-center text-rose-400 mb-4">
           <AlertTriangle className="w-6 h-6" />
         </div>
-        <h2 className="text-xl font-bold text-neutral-900">Session Error</h2>
-        <p className="text-sm text-neutral-500 mt-2 leading-relaxed">
+        <h2 className="text-xl font-bold text-white">Session Error</h2>
+        <p className="text-sm text-slate-400 mt-2 leading-relaxed">
           {error || 'Unable to load quiz session. Please return to the join page and enter your credentials.'}
         </p>
         <div className="mt-6 flex items-center gap-3">
@@ -116,33 +122,33 @@ export default function QuizPage() {
   const progressPercent = Math.round(((currentQuestionIndex + 1) / totalQuestions) * 100);
 
   return (
-    <div className="min-h-screen bg-white flex flex-col justify-between selection:bg-neutral-900 selection:text-white">
+    <div className="min-h-screen bg-[#070916] text-white flex flex-col justify-between selection:bg-[#9db40c] selection:text-[#070916]">
       {/* 
         Unified Sticky Header Block:
-        Solid opaque background (bg-white) ensures that scrolling question content
-        never bleeds through or overlaps with navbar text or timer labels.
+        Deep obsidian background ensures that scrolling question content
+        never bleeds through or overlaps with navbar text or controls.
       */}
-      <div className="sticky top-0 z-30 bg-white border-b border-neutral-200 shadow-xs">
+      <div className="sticky top-0 z-30 bg-[#070916]/95 backdrop-blur-md border-b border-[#283f5f]/40 shadow-lg">
         {/* Top Navbar Row */}
         <ParticipantNavbar
           quizTitle={session.quiz_title}
           phone={session.phone}
           onFullscreenRequest={requestFullscreen}
           isSticky={false}
-          className="border-b-0"
+          className="border-b-0 bg-transparent"
         />
 
         {/* Subheader: Question Progress, Palette & Timer */}
-        <div className="border-t border-neutral-100 bg-white">
+        <div className="border-t border-[#283f5f]/30 bg-[#0d1224]/90">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4">
             {/* Question Index Pill */}
             <div className="flex items-center gap-2 sm:gap-3">
-              <span className="text-xs sm:text-sm font-semibold text-neutral-900 font-mono-tabular">
+              <span className="text-xs sm:text-sm font-bold text-white font-mono-tabular">
                 Question {String(currentQuestionIndex + 1).padStart(2, '0')} / {String(totalQuestions).padStart(2, '0')}
               </span>
-              <span className="text-neutral-300 hidden sm:inline">•</span>
-              <span className="text-xs text-neutral-500 font-mono-tabular hidden sm:inline">
-                {answeredCount} of {totalQuestions} answered
+              <span className="text-[#283f5f] hidden sm:inline">•</span>
+              <span className="text-xs text-slate-400 font-mono-tabular hidden sm:inline">
+                <strong className="text-[#9db40c]">{answeredCount}</strong> of {totalQuestions} answered
               </span>
             </div>
 
@@ -151,27 +157,27 @@ export default function QuizPage() {
               <button
                 type="button"
                 onClick={() => setIsPaletteModalOpen(true)}
-                className="px-2.5 py-1.5 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 text-xs font-medium flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+                className="px-2.5 py-1.5 rounded-xl border border-[#283f5f] bg-[#0d1224] hover:bg-[#283f5f]/35 text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
                 title="View all questions"
               >
-                <Grid className="w-3.5 h-3.5 text-neutral-500" />
+                <Grid className="w-3.5 h-3.5 text-[#9db40c]" />
                 <span className="hidden sm:inline">Palette</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setIsSubmitModalOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-medium flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-[#9db40c] hover:bg-[#b0c90e] text-[#070916] text-xs font-black flex items-center gap-1.5 transition-colors shadow-md cursor-pointer"
                 title="Submit Quiz"
               >
-                <Send className="w-3 h-3 text-neutral-300" />
+                <Send className="w-3 h-3 text-[#070916]" />
                 <span>Submit</span>
               </button>
             </div>
           </div>
 
           {/* Progress Bar */}
-          <Progress value={progressPercent} className="h-1 rounded-none bg-neutral-100" />
+          <Progress value={progressPercent} className="h-1 rounded-none bg-[#070916]" barClassName="bg-[#9db40c]" />
         </div>
       </div>
 
@@ -215,7 +221,7 @@ export default function QuizPage() {
       </main>
 
       {/* Sticky Bottom Navigation Bar */}
-      <footer className="border-t border-neutral-200 bg-white sticky bottom-0 z-20 py-3.5 px-4 sm:px-6 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
+      <footer className="border-t border-[#283f5f]/50 bg-[#0d1224] sticky bottom-0 z-20 py-3.5 px-4 sm:px-6 shadow-[0_-4px_16px_rgba(0,0,0,0.5)]">
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
           {/* Previous Button */}
           <Button
@@ -231,14 +237,14 @@ export default function QuizPage() {
 
           {/* Middle status & quick submit */}
           <div className="flex items-center gap-3">
-            <span className="text-xs text-neutral-500 font-mono-tabular">
-              {answeredCount}/{totalQuestions} Answered
+            <span className="text-xs text-slate-400 font-mono-tabular">
+              <span className="text-[#9db40c] font-black">{answeredCount}</span>/{totalQuestions} Answered
             </span>
             {!isLastQuestion && (
               <button
                 type="button"
                 onClick={() => setIsSubmitModalOpen(true)}
-                className="text-xs font-medium text-neutral-500 hover:text-neutral-900 underline underline-offset-2 transition-colors cursor-pointer"
+                className="text-xs font-bold text-slate-400 hover:text-[#9db40c] underline underline-offset-2 transition-colors cursor-pointer"
               >
                 Submit
               </button>
@@ -251,7 +257,7 @@ export default function QuizPage() {
               variant="primary"
               size="md"
               onClick={() => setIsSubmitModalOpen(true)}
-              className="gap-1.5 px-5 sm:px-7 bg-neutral-900 cursor-pointer"
+              className="gap-1.5 px-5 sm:px-7 cursor-pointer"
             >
               <span>Submit Quiz</span>
               <Send className="w-3.5 h-3.5" />
@@ -274,19 +280,20 @@ export default function QuizPage() {
       <SubmitModal
         isOpen={isSubmitModalOpen}
         onClose={() => setIsSubmitModalOpen(false)}
-        onConfirm={submitQuiz}
+        onConfirm={() => submitQuiz(false)}
         totalQuestions={totalQuestions}
         answeredCount={answeredCount}
+        unansweredIndices={unansweredIndices}
+        onJumpToQuestion={goToQuestion}
         isSubmitting={isSubmitting}
       />
 
       <QuestionPaletteModal
         isOpen={isPaletteModalOpen}
         onClose={() => setIsPaletteModalOpen(false)}
-        totalQuestions={totalQuestions}
+        questions={session.questions}
         currentIndex={currentQuestionIndex}
         answers={session.answers}
-        questionIds={session.questions.map((q) => q.question_id)}
         onSelectQuestion={(idx) => {
           goToQuestion(idx);
         }}

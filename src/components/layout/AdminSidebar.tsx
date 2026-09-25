@@ -11,6 +11,7 @@ import {
   Award,
   ArrowLeft,
   LogOut,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { adminSignOut } from '@/components/admin/AdminAuthGuard';
@@ -60,22 +61,25 @@ export const AdminSidebar: React.FC = () => {
   };
 
   return (
-    <aside className="w-64 bg-neutral-50/50 border-r border-neutral-200/80 flex flex-col justify-between h-screen sticky top-0">
+    <aside className="w-64 bg-[#060B07] border-r border-[#283F5F]/50 flex flex-col justify-between h-screen sticky top-0">
       {/* Brand Header */}
       <div>
-        <div className="h-16 px-6 flex items-center border-b border-neutral-200/80">
+        <div className="h-16 px-6 flex items-center border-b border-[#283F5F]/40 gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-[#031C6C] border border-[#283F5F] flex items-center justify-center">
+            <Sparkles className="w-4 h-4 text-[#9DB40C]" />
+          </div>
           <div className="flex flex-col">
-            <span className="font-bold text-base tracking-tight text-neutral-900 leading-tight">
+            <span className="font-extrabold text-base tracking-tight text-white leading-tight">
               Bug Busters
             </span>
-            <span className="text-[11px] text-neutral-400 font-medium">
+            <span className="text-[11px] text-[#9DB40C] font-semibold">
               Admin Console
             </span>
           </div>
         </div>
 
         {/* Navigation List */}
-        <nav className="p-3 space-y-1">
+        <nav className="p-3 space-y-1.5">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item);
@@ -85,15 +89,15 @@ export const AdminSidebar: React.FC = () => {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors',
+                  'flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all',
                   active
-                    ? 'bg-neutral-900 text-white shadow-xs'
-                    : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
+                    ? 'bg-[#031C6C] text-[#9DB40C] border border-[#283F5F] shadow-sm font-bold'
+                    : 'text-slate-400 hover:text-white hover:bg-[#283F5F]/20'
                 )}
               >
                 <div className="flex items-center gap-3">
                   <Icon
-                    className={cn('w-4 h-4', active ? 'text-white' : 'text-neutral-500')}
+                    className={cn('w-4 h-4', active ? 'text-[#9DB40C]' : 'text-slate-400')}
                   />
                   <span>{item.label}</span>
                 </div>
@@ -101,10 +105,10 @@ export const AdminSidebar: React.FC = () => {
                 {item.badge && (
                   <span
                     className={cn(
-                      'text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider',
+                      'text-[10px] px-1.5 py-0.5 rounded font-extrabold uppercase tracking-wider',
                       active
-                        ? 'bg-emerald-500 text-neutral-950'
-                        : 'bg-emerald-100 text-emerald-800'
+                        ? 'bg-[#9DB40C] text-black'
+                        : 'bg-[#9DB40C]/20 text-[#9DB40C] border border-[#9DB40C]/30'
                     )}
                   >
                     {item.badge}
@@ -117,10 +121,10 @@ export const AdminSidebar: React.FC = () => {
       </div>
 
       {/* Footer Return & Sign Out CTA */}
-      <div className="p-3 border-t border-neutral-200/80 space-y-1">
+      <div className="p-3 border-t border-[#283F5F]/40 space-y-1">
         <Link
           href="/"
-          className="flex items-center gap-2 text-xs font-medium text-neutral-500 hover:text-neutral-900 px-3 py-2 rounded-lg hover:bg-neutral-100 transition-colors"
+          className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-[#9DB40C] px-3 py-2 rounded-lg hover:bg-[#283F5F]/20 transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Landing Page</span>
@@ -128,7 +132,7 @@ export const AdminSidebar: React.FC = () => {
 
         <button
           onClick={() => adminSignOut()}
-          className="w-full flex items-center gap-2 text-xs font-medium text-neutral-500 hover:text-rose-600 px-3 py-2 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer text-left"
+          className="w-full flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-rose-400 px-3 py-2 rounded-lg hover:bg-rose-950/40 transition-colors cursor-pointer text-left"
         >
           <LogOut className="w-3.5 h-3.5" />
           <span>Sign Out</span>

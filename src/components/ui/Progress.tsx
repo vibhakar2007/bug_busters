@@ -26,10 +26,10 @@ export const Progress: React.FC<ProgressProps> = ({
   }, [percentage]);
 
   return (
-    <div className={cn('h-2 w-full bg-neutral-100 rounded-full overflow-hidden', className)}>
+    <div className={cn('h-2 w-full bg-[#070916] border border-[#283f5f]/40 rounded-full overflow-hidden', className)}>
       <div
         ref={barRef}
-        className={cn('h-full bg-neutral-900 rounded-full transition-all duration-300', barClassName)}
+        className={cn('h-full bg-[#9db40c] rounded-full transition-all duration-300 shadow-[0_0_8px_rgba(157,180,12,0.45)]', barClassName)}
         style={{ width: `${percentage}%` }}
       />
     </div>

@@ -56,10 +56,10 @@ export default function AdminDashboardPage() {
       {/* Dashboard Top Row */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
             Overview
           </h1>
-          <p className="text-xs sm:text-sm text-neutral-500 mt-1">
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
             Real-time status and participant tracking.
           </p>
         </div>
@@ -67,7 +67,7 @@ export default function AdminDashboardPage() {
         <div className="flex items-center gap-2.5">
           <Link href="/admin/monitor">
             <Button variant="outline" size="sm" className="gap-1.5 shadow-xs">
-              <Activity className="w-4 h-4 text-emerald-600" />
+              <Activity className="w-4 h-4 text-[#9db40c]" />
               <span>Live Monitor</span>
             </Button>
           </Link>
@@ -129,28 +129,28 @@ export default function AdminDashboardPage() {
         {/* Left 2 Cols: Live Quizzes & Quick Launcher */}
         <div className="lg:col-span-2 space-y-6">
           <Card className="p-6">
-            <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
+            <div className="flex items-center justify-between pb-4 border-b border-[#283f5f]/60">
               <div>
-                <h3 className="text-base font-semibold text-neutral-900">Active Rounds</h3>
-                <p className="text-xs text-neutral-500 mt-0.5">
+                <h3 className="text-base font-semibold text-white">Active Rounds</h3>
+                <p className="text-xs text-slate-400 mt-0.5">
                   Currently running and upcoming competitive rounds
                 </p>
               </div>
               <Link
                 href="/admin/quizzes"
-                className="text-xs font-medium text-neutral-600 hover:text-neutral-900 flex items-center gap-1"
+                className="text-xs font-medium text-slate-400 hover:text-[#9db40c] flex items-center gap-1 transition-colors"
               >
                 <span>Manage All</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
-            <div className="divide-y divide-neutral-100 mt-2">
+            <div className="divide-y divide-[#283f5f]/60 mt-2">
               {quizzes.slice(0, 3).map((quiz) => (
                 <div key={quiz.quiz_id} className="py-4 flex items-center justify-between gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm text-neutral-900">{quiz.title}</span>
+                      <span className="font-semibold text-sm text-white">{quiz.title}</span>
                       <Badge
                         variant={
                           quiz.status === 'live'
@@ -165,8 +165,8 @@ export default function AdminDashboardPage() {
                       </Badge>
                     </div>
 
-                    <div className="flex items-center gap-3 text-xs text-neutral-500 font-mono-tabular">
-                      <span>Code: <strong>{quiz.code}</strong></span>
+                    <div className="flex items-center gap-3 text-xs text-slate-400 font-mono-tabular">
+                      <span>Code: <strong className="text-[#9db40c]">{quiz.code}</strong></span>
                       <span>•</span>
                       <span>{quiz.question_count} Questions</span>
                       <span>•</span>
@@ -187,18 +187,18 @@ export default function AdminDashboardPage() {
           </Card>
 
           {/* Quick Info / Instructions Banner */}
-          <div className="p-5 rounded-2xl border border-neutral-200/80 bg-neutral-900 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="p-5 rounded-2xl border border-[#283f5f] bg-[#031c6c]/25 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#9db40c]">
                 Symposium Mode Active
               </span>
-              <h4 className="text-base font-bold mt-1">Live Monitor is streaming events</h4>
-              <p className="text-xs text-neutral-400 mt-1 max-w-md">
+              <h4 className="text-base font-bold mt-1 text-white">Live Monitor is streaming events</h4>
+              <p className="text-xs text-slate-300 mt-1 max-w-md">
                 Monitor student screen changes, tab switching, and real-time answer progression directly from the Live Monitor console.
               </p>
             </div>
             <Link href="/admin/monitor">
-              <Button variant="secondary" size="md" className="shrink-0 text-xs font-semibold">
+              <Button variant="primary" size="md" className="shrink-0 text-xs font-bold">
                 Open Live Monitor
               </Button>
             </Link>
@@ -208,34 +208,34 @@ export default function AdminDashboardPage() {
         {/* Right 1 Col: Live Activity Ticker */}
         <div className="space-y-4">
           <Card className="p-5">
-            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+            <div className="flex items-center justify-between pb-3 border-b border-[#283f5f]/60">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <h3 className="text-sm font-semibold text-neutral-900">Live Activity Feed</h3>
+                <span className="w-2 h-2 rounded-full bg-[#9db40c] animate-pulse" />
+                <h3 className="text-sm font-semibold text-white">Live Activity Feed</h3>
               </div>
-              <Link href="/admin/monitor" className="text-[11px] text-neutral-500 hover:text-neutral-900">
+              <Link href="/admin/monitor" className="text-[11px] text-slate-400 hover:text-[#9db40c] transition-colors">
                 View All
               </Link>
             </div>
 
-            <div className="divide-y divide-neutral-100 mt-2 space-y-1">
+            <div className="divide-y divide-[#283f5f]/40 mt-2 space-y-1">
               {activities.map((act) => (
                 <div key={act.activity_id} className="py-2.5 text-xs">
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold text-neutral-900 truncate max-w-[140px]">
+                    <span className="font-semibold text-white truncate max-w-[140px]">
                       {act.participant_name}
                     </span>
-                    <span className="text-[10px] text-neutral-400 font-mono-tabular">
+                    <span className="text-[10px] text-slate-400 font-mono-tabular">
                       {formatTimestamp(act.event_time)}
                     </span>
                   </div>
                   <p
                     className={`mt-0.5 text-[11px] truncate ${
                       act.severity === 'violation'
-                        ? 'text-rose-700 font-medium'
+                        ? 'text-rose-400 font-medium'
                         : act.severity === 'warning'
-                        ? 'text-amber-700'
-                        : 'text-neutral-500'
+                        ? 'text-amber-400'
+                        : 'text-slate-400'
                     }`}
                   >
                     {act.details || act.event_type}

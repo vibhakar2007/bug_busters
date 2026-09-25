@@ -1,3 +1,5 @@
+import { HandsOnSubmission } from './handsOnDebug';
+
 export type ParticipantStatus = 'active' | 'completed' | 'flagged';
 
 /**
@@ -17,6 +19,11 @@ export interface Participant {
   total_questions?: number;
   last_activity_time?: string;
   last_activity_description?: string;
+  hands_on_score?: number;
+  hands_on_total?: number;
+  hands_on_submissions?: Record<number, HandsOnSubmission>;
+  time_taken_seconds?: number;
+  time_taken_formatted?: string;
 }
 
 export interface CreateParticipantInput {
@@ -55,5 +62,11 @@ export interface ParticipantResult {
   time_taken_seconds: number;
   time_taken_formatted: string;
   submitted_at: string;
+  start_time?: string;
+  end_time?: string;
   review_items: QuestionReviewItem[];
+  hands_on_score?: number;
+  hands_on_total?: number;
+  hands_on_submissions?: Record<number, HandsOnSubmission>;
 }
+

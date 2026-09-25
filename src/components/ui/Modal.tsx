@@ -46,27 +46,27 @@ export const Modal: React.FC<ModalProps> = ({
       {/* Backdrop */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-neutral-900/40 backdrop-blur-xs transition-opacity duration-200"
+        className="fixed inset-0 bg-[#070916]/85 backdrop-blur-md transition-opacity duration-200"
       />
 
       {/* Modal Dialog */}
       <div
         ref={contentRef}
         className={cn(
-          'relative w-full max-w-lg bg-white rounded-2xl border border-neutral-200 shadow-2xl p-6 sm:p-8 z-10',
+          'relative w-full max-w-lg bg-[#0d1224] rounded-2xl border border-[#283f5f] text-white shadow-2xl p-6 sm:p-8 z-10',
           className
         )}
       >
         <button
           onClick={onClose}
           aria-label="Close"
-          className="absolute top-5 right-5 p-2 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded-full transition-colors"
+          className="absolute top-5 right-5 p-2 text-slate-400 hover:text-white hover:bg-[#283f5f]/40 rounded-full transition-colors cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>
 
-        {title && <h3 className="text-xl font-semibold text-neutral-900 tracking-tight">{title}</h3>}
-        {description && <p className="text-sm text-neutral-500 mt-1 mb-5">{description}</p>}
+        {title && <h3 className="text-xl font-bold text-white tracking-tight">{title}</h3>}
+        {description && <p className="text-sm text-slate-400 mt-1 mb-5">{description}</p>}
 
         <div className="mt-4">{children}</div>
       </div>

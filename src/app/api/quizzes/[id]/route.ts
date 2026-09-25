@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import { Quiz } from '@/types/quiz';
-import { readJsonData, writeJsonData } from '@/lib/server/jsonStorage';
+import { Participant } from '@/types/participant';
+import { readJsonData, writeJsonData, updateJsonData } from '@/lib/server/jsonStorage';
 import quizzesFallback from '@/data/quizzes.json';
+import participantsFallback from '@/data/participants.json';
+import { formatDurationSeconds } from '@/lib/utils/time';
 
 export async function GET(
   request: Request,
@@ -41,6 +44,32 @@ export async function PUT(
 
     quizzes[index] = updatedQuiz;
     await writeJsonData('quizzes.json', quizzes);
+
+    if (data.status === 'closed') {
+      const now = new Date().toISOString();
+      await updateJsonData<Participant[]>(
+        'participants.json',
+        participantsFallback as unknown as Participant[],
+        (participants) => {
+          return participants.map((p) => {
+            if (p.quiz_id === quizId && p.status !== 'completed') {
+              const startMs = p.start_time ? new Date(p.start_time).getTime() : new Date(now).getTime();
+              const endMs = new Date(now).getTime();
+              const durationSec = Math.max(1, Math.round((endMs - startMs) / 1000));
+              return {
+                ...p,
+                status: 'completed',
+                end_time: p.end_time || now,
+                time_taken_seconds: p.time_taken_seconds || durationSec,
+                time_taken_formatted: p.time_taken_formatted || formatDurationSeconds(durationSec),
+                last_activity_description: 'Event concluded by administrator',
+              };
+            }
+            return p;
+          });
+        }
+      );
+    }
 
     return NextResponse.json(updatedQuiz);
   } catch (error) {

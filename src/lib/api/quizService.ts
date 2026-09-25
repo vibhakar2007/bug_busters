@@ -149,6 +149,10 @@ class QuizService {
 
     this.saveQuizzes();
 
+    if (data.status) {
+      realtimeBus.emit('quiz_status_changed', { quiz_id: id, status: data.status });
+    }
+
     // Persist to server /data/quizzes.json
     if (typeof window !== 'undefined') {
       try {

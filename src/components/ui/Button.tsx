@@ -21,21 +21,21 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-150 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2';
+      'inline-flex items-center justify-center font-bold rounded-xl transition-all duration-150 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9db40c] focus-visible:ring-offset-2 focus-visible:ring-offset-[#070916] cursor-pointer';
 
     const variants = {
-      primary: 'bg-neutral-900 text-white hover:bg-neutral-800 shadow-sm border border-neutral-900',
-      secondary: 'bg-neutral-100 text-neutral-900 hover:bg-neutral-200 border border-neutral-200/60',
-      outline: 'bg-white text-neutral-900 border border-neutral-200 hover:bg-neutral-50 shadow-sm',
-      ghost: 'bg-transparent text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900',
-      danger: 'bg-red-600 text-white hover:bg-red-700 shadow-sm border border-red-600',
-      success: 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm border border-emerald-600',
+      primary: 'bg-[#9db40c] text-[#070916] hover:bg-[#b0c90e] hover:shadow-[0_0_16px_rgba(157,180,12,0.45)] shadow-md border border-[#9db40c]',
+      secondary: 'bg-[#031c6c] text-white hover:bg-[#052899] border border-[#283f5f] shadow-sm',
+      outline: 'bg-[#0d1224] text-white border border-[#283f5f] hover:bg-[#283f5f]/35 hover:border-slate-300 hover:text-white shadow-sm',
+      ghost: 'bg-transparent text-slate-300 hover:bg-[#283f5f]/30 hover:text-white',
+      danger: 'bg-rose-600 text-white hover:bg-rose-700 shadow-sm border border-rose-500',
+      success: 'bg-[#9db40c] text-[#070916] hover:bg-[#b0c90e] shadow-sm border border-[#9db40c]',
     };
 
     const sizes = {
       sm: 'text-xs h-9 px-3.5 gap-1.5',
       md: 'text-sm h-11 px-5 gap-2',
-      lg: 'text-base h-13 px-6 gap-2.5 font-semibold',
+      lg: 'text-base h-13 px-6 gap-2.5 font-bold',
     };
 
     return (

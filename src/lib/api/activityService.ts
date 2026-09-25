@@ -47,7 +47,7 @@ class ActivityService {
         console.warn('Failed to read activities from storage:', e);
       }
     }
-    this.activities = [...MOCK_ACTIVITIES];
+    this.activities = [];
   }
 
   private saveActivitiesToLocal() {
@@ -76,17 +76,25 @@ class ActivityService {
 
   public async recordActivity(input: RecordActivityInput): Promise<ParticipantActivity> {
     this.loadActivities();
-    const nextId =
-      this.activities.length > 0
-        ? Math.max(...this.activities.map((a) => a.activity_id)) + 1
-        : 1;
 
-    let severity: 'normal' | 'warning' | 'violation' = 'normal';
-    if (['tab_switch', 'copy_attempt', 'paste_attempt', 'dev_tools'].includes(input.event_type)) {
-      severity = 'violation';
-    } else if (['focus_loss', 'fullscreen_exit', 'context_menu'].includes(input.event_type)) {
-      severity = 'warning';
+    // Prevent duplicate event insertion in client memory within 2 seconds
+    const isDuplicate = this.activities.some((a) => {
+      if (a.participant_id !== input.participant_id || a.event_type !== input.event_type) return false;
+      const diff = Math.abs(Date.now() - new Date(a.event_time).getTime());
+      return diff < 2000;
+    });
+
+    if (isDuplicate && this.activities.length > 0) {
+      return this.activities[0];
     }
+
+    const nextId = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+    const severity: 'normal' | 'warning' | 'violation' =
+      input.event_type === 'tab_switch'
+        ? 'violation'
+        : input.event_type === 'focus_loss'
+        ? 'warning'
+        : 'normal';
 
     const newActivity: ParticipantActivity = {
       activity_id: nextId,
@@ -111,7 +119,7 @@ class ActivityService {
     // Persist to server /data/activity.json
     if (typeof window !== 'undefined') {
       try {
-        await fetch('/api/activity?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', {
+        const res = await fetch('/api/activity?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -120,6 +128,13 @@ class ActivityService {
           },
           body: JSON.stringify(input),
         });
+        if (res.ok) {
+          const serverCreated = await res.json();
+          if (serverCreated && serverCreated.activity_id && !serverCreated.skipped) {
+            newActivity.activity_id = serverCreated.activity_id;
+            this.saveActivities();
+          }
+        }
       } catch (err) {
         console.warn('Failed to sync activity to server API:', err);
       }
@@ -132,6 +147,17 @@ class ActivityService {
     return realtimeBus.on<ParticipantActivity>('activity_recorded', (act) => {
       callback(act);
     });
+  }
+
+  public clearAll(): void {
+    this.activities = [];
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(STORAGE_KEY_ACTIVITIES);
+      } catch {
+        // Ignore
+      }
+    }
   }
 }
 

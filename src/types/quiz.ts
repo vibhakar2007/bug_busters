@@ -9,6 +9,7 @@ export type QuestionType = 'quiz' | 'debug';
  */
 export interface Question {
   question_id: number;
+  concept_id?: string;
   question: string;
   code_snippet?: string;
   option_a: string;
@@ -73,6 +74,7 @@ export interface RandomizedOption {
  */
 export interface SessionQuestion {
   question_id: number;
+  concept_id?: string;
   question: string;
   code_snippet?: string;
   category?: string;

@@ -74,20 +74,20 @@ export const AdminAuthGuard: React.FC<{ children: React.ReactNode }> = ({ childr
 
   if (isChecking) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
-        <div className="w-8 h-8 border-2 border-neutral-300 border-t-neutral-900 rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#070916] flex flex-col items-center justify-center p-6">
+        <div className="w-8 h-8 border-2 border-[#283f5f] border-t-[#9db40c] rounded-full animate-spin" />
       </div>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex flex-col justify-between selection:bg-neutral-900 selection:text-white px-4 py-8 sm:py-12">
+      <div className="min-h-screen bg-[#070916] flex flex-col justify-between selection:bg-[#9db40c] selection:text-[#070916] px-4 py-8 sm:py-12">
         {/* Top return link */}
         <div className="max-w-md mx-auto w-full">
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-neutral-900 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Return to Home</span>
@@ -97,29 +97,29 @@ export const AdminAuthGuard: React.FC<{ children: React.ReactNode }> = ({ childr
         {/* Login Card */}
         <div className="max-w-md mx-auto w-full my-auto py-6">
           <div className="text-center mb-8">
-            <div className="w-12 h-12 bg-neutral-900 text-white rounded-2xl flex items-center justify-center font-bold text-lg mx-auto shadow-sm mb-4">
-              <Lock className="w-5 h-5 text-white" />
+            <div className="w-12 h-12 bg-[#031c6c] text-[#9db40c] border border-[#283f5f] rounded-2xl flex items-center justify-center font-bold text-lg mx-auto shadow-sm mb-4">
+              <Lock className="w-5 h-5 text-[#9db40c]" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-950">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
               Bug Busters Admin
             </h1>
-            <p className="text-xs sm:text-sm text-neutral-500 mt-1">
+            <p className="text-xs sm:text-sm text-slate-400 mt-1">
               Sign in with your administrator credentials.
             </p>
           </div>
 
-          <Card className="p-6 sm:p-8 shadow-md border-neutral-200">
+          <Card className="p-6 sm:p-8 shadow-md border-[#283f5f]">
             <form onSubmit={handleLogin} className="space-y-4">
               {error && (
-                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200/80 text-rose-900 text-xs flex items-start gap-2.5">
-                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
                   <span className="leading-relaxed">{error}</span>
                 </div>
               )}
 
               {/* Username */}
               <div>
-                <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                   Username
                 </label>
                 <input
@@ -129,13 +129,13 @@ export const AdminAuthGuard: React.FC<{ children: React.ReactNode }> = ({ childr
                   placeholder="admin"
                   required
                   autoFocus
-                  className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-mono-tabular text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:bg-white transition-all"
+                  className="w-full px-4 py-3 bg-[#070916] border border-[#283f5f] rounded-xl text-sm font-mono-tabular text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#9db40c] transition-all"
                 />
               </div>
 
               {/* Password */}
               <div>
-                <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                   Password
                 </label>
                 <input
@@ -144,7 +144,7 @@ export const AdminAuthGuard: React.FC<{ children: React.ReactNode }> = ({ childr
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-mono-tabular text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:bg-white transition-all"
+                  className="w-full px-4 py-3 bg-[#070916] border border-[#283f5f] rounded-xl text-sm font-mono-tabular text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#9db40c] transition-all"
                 />
               </div>
 
@@ -153,7 +153,7 @@ export const AdminAuthGuard: React.FC<{ children: React.ReactNode }> = ({ childr
                   type="submit"
                   variant="primary"
                   size="lg"
-                  className="w-full text-sm font-semibold cursor-pointer"
+                  className="w-full text-sm font-bold cursor-pointer"
                   isLoading={isSubmitting}
                 >
                   Sign In to Admin Console
@@ -161,15 +161,15 @@ export const AdminAuthGuard: React.FC<{ children: React.ReactNode }> = ({ childr
               </div>
             </form>
 
-            <div className="mt-6 pt-5 border-t border-neutral-100 flex items-center justify-center gap-2 text-[11px] text-neutral-400">
-              <ShieldCheck className="w-3.5 h-3.5 text-neutral-400" />
+            <div className="mt-6 pt-5 border-t border-[#283f5f]/60 flex items-center justify-center gap-2 text-[11px] text-slate-400">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#9db40c]" />
               <span>Protected symposium administrative gateway</span>
             </div>
           </Card>
         </div>
 
         {/* Footer */}
-        <footer className="max-w-md mx-auto w-full text-center text-xs text-neutral-400">
+        <footer className="max-w-md mx-auto w-full text-center text-xs text-slate-500">
           BugBusters Platform • Technica Symposium 2026
         </footer>
       </div>

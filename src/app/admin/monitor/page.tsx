@@ -72,14 +72,14 @@ export default function LiveMonitorPage() {
         <div>
           <div className="flex items-center gap-2">
             <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#9db40c] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#9db40c]"></span>
             </span>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
               Live Monitor
             </h1>
           </div>
-          <p className="text-xs sm:text-sm text-neutral-500 mt-1">
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
             Real-time telemetry stream, anti-cheating violations, and participant activity inspection.
           </p>
         </div>
@@ -91,9 +91,9 @@ export default function LiveMonitorPage() {
             size="sm"
             onClick={() => window.location.reload()}
             title="Refresh"
-            className="gap-1.5 text-xs text-neutral-700 hover:text-neutral-950 border-neutral-300 shadow-xs"
+            className="gap-1.5 text-xs text-slate-200 hover:text-white border-[#283f5f] hover:bg-[#283f5f]/30 shadow-xs"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-neutral-500" />
+            <RefreshCw className="w-3.5 h-3.5 text-slate-400" />
             <span>Refresh</span>
           </Button>
         </div>
@@ -142,6 +142,7 @@ export default function LiveMonitorPage() {
           <LiveParticipantTable
             participants={participants}
             onSelectParticipant={handleSelectParticipant}
+            onClearFlag={(id) => handleFlagToggle(id, 'flagged')}
           />
         </div>
 

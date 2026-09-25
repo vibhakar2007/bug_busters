@@ -1,6 +1,7 @@
 import { QuizSession } from '@/types/quiz';
 import { ParticipantResult, QuestionReviewItem } from '@/types/participant';
 import { formatTime } from '@/lib/utils/cn';
+import { getQuestionAnswer } from '@/lib/quiz/sessionEngine';
 
 export function calculateQuizResult(session: QuizSession): ParticipantResult {
   let correctCount = 0;
@@ -9,7 +10,7 @@ export function calculateQuizResult(session: QuizSession): ParticipantResult {
   const reviewItems: QuestionReviewItem[] = [];
 
   session.questions.forEach((q, index) => {
-    const selectedKey = session.answers[q.question_id];
+    const selectedKey = getQuestionAnswer(q, session.answers);
     const isUnanswered = !selectedKey;
     const isCorrect = !isUnanswered && selectedKey.toUpperCase() === q.correct_option.toUpperCase();
 
@@ -46,10 +47,7 @@ export function calculateQuizResult(session: QuizSession): ParticipantResult {
 
   const startMs = new Date(session.startTime).getTime();
   const endMs = session.submittedAt ? new Date(session.submittedAt).getTime() : Date.now();
-  const rawSeconds = Math.max(0, Math.floor((endMs - startMs) / 1000));
-  // Time taken can never exceed the total quiz duration
-  const maxAllowedSeconds = (session.durationMinutes || 20) * 60;
-  const timeTakenSeconds = Math.min(rawSeconds, maxAllowedSeconds);
+  const timeTakenSeconds = Math.max(0, Math.floor((endMs - startMs) / 1000));
 
   return {
     participant_id: session.participant_id,

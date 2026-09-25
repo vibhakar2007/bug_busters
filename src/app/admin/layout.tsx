@@ -8,7 +8,7 @@ import { AdminAuthGuard } from '@/components/admin/AdminAuthGuard';
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <AdminAuthGuard>
-      <div className="min-h-screen bg-neutral-50/40 flex selection:bg-neutral-900 selection:text-white">
+      <div className="min-h-screen bg-[#070916] text-white flex selection:bg-[#9db40c] selection:text-[#070916]">
         {/* Sidebar (Desktop) */}
         <div className="hidden md:block shrink-0">
           <AdminSidebar />

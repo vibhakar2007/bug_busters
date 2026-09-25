@@ -9,7 +9,7 @@ interface UseViolationMonitorProps {
   registrationNumber: string;
   currentQuestionId?: number | null;
   enabled?: boolean;
-  onViolation?: (eventType: ActivityEventType, message: string) => void;
+  onViolation?: (eventType: ActivityEventType, message: string, newCount: number) => void;
 }
 
 export interface ViolationToastState {
@@ -17,6 +17,7 @@ export interface ViolationToastState {
   type: ActivityEventType;
   message: string;
   timestamp: string;
+  isFlagged: boolean;
 }
 
 export function useViolationMonitor({
@@ -29,165 +30,214 @@ export function useViolationMonitor({
 }: UseViolationMonitorProps) {
   const [violationCount, setViolationCount] = useState<number>(0);
   const [activeWarning, setActiveWarning] = useState<ViolationToastState | null>(null);
-  const lastRecordedTimeRef = useRef<{ [key: string]: number }>({});
-  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Sync initial violation count from participant service
+  // Keep references to latest prop values
+  const propsRef = useRef({
+    participantId,
+    participantName,
+    registrationNumber,
+    currentQuestionId,
+    enabled,
+    onViolation,
+  });
+
+  useEffect(() => {
+    propsRef.current = {
+      participantId,
+      participantName,
+      registrationNumber,
+      currentQuestionId,
+      enabled,
+      onViolation,
+    };
+  }, [participantId, participantName, registrationNumber, currentQuestionId, enabled, onViolation]);
+
+  // Grace period: ignore events during the first 5 seconds of mount
+  const mountTimeRef = useRef<number>(Date.now());
+  // Cooldown: enforce at least 5 seconds between recorded violations
+  const lastViolationTimeRef = useRef<number>(0);
+  const isProcessingRef = useRef<boolean>(false);
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hiddenTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isNavigatingRef = useRef<boolean>(false);
+
+  // Sync initial violation count from participant record
   useEffect(() => {
     let isMounted = true;
-    participantService.getParticipant(participantId).then((p) => {
-      if (isMounted && p) {
-        setViolationCount(p.violation_count || 0);
-      }
-    });
+    if (participantId && participantId > 0) {
+      participantService.getParticipant(participantId).then((p) => {
+        if (isMounted && p) {
+          setViolationCount(p.violation_count || 0);
+        }
+      });
+    }
     return () => {
       isMounted = false;
     };
   }, [participantId]);
 
-  const recordViolation = useCallback(
-    async (eventType: ActivityEventType, customMessage: string) => {
-      const now = Date.now();
-      const lastRecorded = lastRecordedTimeRef.current[eventType] || 0;
+  const handleConfirmedViolation = useCallback(
+    async (eventType: 'tab_switch', customMessage: string) => {
+      const {
+        participantId: pId,
+        participantName: pName,
+        registrationNumber: regNo,
+        currentQuestionId: qId,
+        enabled: isEnabled,
+        onViolation: callback,
+      } = propsRef.current;
 
-      // Throttle identical events within 1.5s to prevent event spam
-      if (now - lastRecorded < 1500) {
+      if (!isEnabled || !pId || pId <= 0 || isNavigatingRef.current) return;
+
+      const now = Date.now();
+      // Ignore if within 5 seconds of mount
+      if (now - mountTimeRef.current < 5000) {
         return;
       }
-      lastRecordedTimeRef.current[eventType] = now;
 
-      // Update participant violation count
-      const updatedParticipant = await participantService.incrementViolation(
-        participantId,
-        customMessage
-      );
-      setViolationCount(updatedParticipant.violation_count);
-
-      // Record activity in service layer
-      await activityService.recordActivity({
-        participant_id: participantId,
-        participant_name: participantName,
-        registration_number: registrationNumber,
-        question_id: currentQuestionId || null,
-        event_type: eventType,
-        details: customMessage,
-      });
-
-      // Show in-app subtle warning
-      const toastData: ViolationToastState = {
-        id: `v_${Date.now()}`,
-        type: eventType,
-        message: customMessage,
-        timestamp: new Date().toLocaleTimeString(),
-      };
-      setActiveWarning(toastData);
-
-      if (onViolation) {
-        onViolation(eventType, customMessage);
+      // Enforce 5s cooldown
+      if (now - lastViolationTimeRef.current < 5000 || isProcessingRef.current) {
+        return;
       }
 
-      // Auto-dismiss warning after 4 seconds
-      if (timeoutIdRef.current) {
-        clearTimeout(timeoutIdRef.current);
+      lastViolationTimeRef.current = now;
+      isProcessingRef.current = true;
+
+      try {
+        const updated = await participantService.incrementViolation(pId, customMessage);
+        const newCount = updated.violation_count;
+        // 3-strike threshold: Strike 1 (Warning), Strike 2 (Final Warning), Strike 3 (Flagged)
+        const isFlagged = newCount >= 3;
+
+        setViolationCount(newCount);
+
+        // Record activity in service layer
+        await activityService.recordActivity({
+          participant_id: pId,
+          participant_name: pName,
+          registration_number: regNo,
+          question_id: qId || null,
+          event_type: eventType,
+          details: customMessage,
+        });
+
+        let warningMessage = '';
+        if (newCount === 1) {
+          warningMessage = 'Warning (1/3) • Tab switch detected. Please stay on this tab to complete the test.';
+        } else if (newCount === 2) {
+          warningMessage = 'Final Warning (2/3) • Tab switch detected. One more tab switch will flag your submission for audit.';
+        } else {
+          warningMessage = 'Audit Flagged (3/3) • Multiple tab switches detected. Your attempt has been flagged.';
+        }
+
+        const toastData: ViolationToastState = {
+          id: `v_${now}_${Math.random().toString(36).slice(2, 6)}`,
+          type: eventType,
+          message: warningMessage,
+          timestamp: new Date().toLocaleTimeString(),
+          isFlagged,
+        };
+
+        setActiveWarning(toastData);
+
+        if (callback) {
+          callback(eventType, customMessage, newCount);
+        }
+
+        if (toastTimeoutRef.current) {
+          clearTimeout(toastTimeoutRef.current);
+        }
+        if (!isFlagged) {
+          toastTimeoutRef.current = setTimeout(() => {
+            setActiveWarning(null);
+          }, 6000);
+        }
+      } catch (err) {
+        console.error('Error recording anti-cheating violation:', err);
+      } finally {
+        isProcessingRef.current = false;
       }
-      timeoutIdRef.current = setTimeout(() => {
-        setActiveWarning(null);
-      }, 4000);
     },
-    [participantId, participantName, registrationNumber, currentQuestionId, onViolation]
+    []
   );
 
   useEffect(() => {
     if (!enabled || typeof window === 'undefined') return;
 
-    // 1. Tab switch / Visibility change
-    const handleVisibilityChange = () => {
+    mountTimeRef.current = Date.now();
+    isNavigatingRef.current = false;
+
+    // Detect intentional tab switch:
+    // Requires the document to remain hidden for at least 2.5 seconds (2500ms).
+    // Momentary blur, input taps, keyboard popup, or brief gestures will cancel the timer and NOT record a violation.
+    const onVisibilityChange = () => {
+      if (isNavigatingRef.current) return;
+
       if (document.hidden) {
-        recordViolation('tab_switch', 'Tab switch or window minimized detected');
+        // Clear any existing timer
+        if (hiddenTimerRef.current) {
+          clearTimeout(hiddenTimerRef.current);
+        }
+
+        // Start 2.5-second confirmation timer for sustained tab abandonment
+        hiddenTimerRef.current = setTimeout(() => {
+          if (document.hidden && !isNavigatingRef.current) {
+            handleConfirmedViolation(
+              'tab_switch',
+              'Tab switch or window minimized detected'
+            );
+          }
+        }, 2500);
+      } else {
+        // Tab became visible again before 2.5s -> momentary touch/gesture, cancel timer!
+        if (hiddenTimerRef.current) {
+          clearTimeout(hiddenTimerRef.current);
+          hiddenTimerRef.current = null;
+        }
       }
     };
 
-    // 2. Window blur (focus lost)
-    const handleBlur = () => {
-      recordViolation('focus_loss', 'Window focus lost. Please stay on the quiz page.');
-    };
-
-    // 3. Fullscreen changes
-    const handleFullscreenChange = () => {
-      if (!document.fullscreenElement) {
-        recordViolation('fullscreen_exit', 'Fullscreen mode was exited.');
+    // Ignore visibility changes during page navigation or unload
+    const onBeforeUnload = () => {
+      isNavigatingRef.current = true;
+      if (hiddenTimerRef.current) {
+        clearTimeout(hiddenTimerRef.current);
+        hiddenTimerRef.current = null;
       }
     };
 
-    // 4. Copy attempts
-    const handleCopy = (e: ClipboardEvent) => {
-      e.preventDefault();
-      recordViolation('copy_attempt', 'Copying question content is prohibited.');
-    };
-
-    // 5. Paste attempts
-    const handlePaste = (e: ClipboardEvent) => {
-      e.preventDefault();
-      recordViolation('paste_attempt', 'Pasting content into the test is prohibited.');
-    };
-
-    // 6. Context menu (Right click)
-    const handleContextMenu = (e: MouseEvent) => {
-      e.preventDefault();
-      recordViolation('context_menu', 'Right-click context menu is disabled during the quiz.');
-    };
-
-    // 7. Developer tools shortcut attempts
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // F12 or Ctrl+Shift+I or Ctrl+Shift+J or Ctrl+U
-      if (
-        e.key === 'F12' ||
-        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j')) ||
-        (e.ctrlKey && (e.key === 'U' || e.key === 'u'))
-      ) {
-        e.preventDefault();
-        recordViolation('dev_tools', 'Keyboard shortcut inspection attempt logged.');
+    const onPageHide = () => {
+      isNavigatingRef.current = true;
+      if (hiddenTimerRef.current) {
+        clearTimeout(hiddenTimerRef.current);
+        hiddenTimerRef.current = null;
       }
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('blur', handleBlur);
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('copy', handleCopy);
-    document.addEventListener('paste', handlePaste);
-    document.addEventListener('contextmenu', handleContextMenu);
-    window.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('beforeunload', onBeforeUnload);
+    window.addEventListener('pagehide', onPageHide);
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('blur', handleBlur);
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('copy', handleCopy);
-      document.removeEventListener('paste', handlePaste);
-      document.removeEventListener('contextmenu', handleContextMenu);
-      window.removeEventListener('keydown', handleKeyDown);
-      if (timeoutIdRef.current) {
-        clearTimeout(timeoutIdRef.current);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      window.removeEventListener('pagehide', onPageHide);
+      if (hiddenTimerRef.current) {
+        clearTimeout(hiddenTimerRef.current);
+      }
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
       }
     };
-  }, [enabled, recordViolation]);
+  }, [enabled, handleConfirmedViolation]);
 
   const dismissWarning = useCallback(() => {
     setActiveWarning(null);
-  }, []);
-
-  const requestFullscreen = useCallback(() => {
-    if (typeof document !== 'undefined' && document.documentElement.requestFullscreen) {
-      document.documentElement.requestFullscreen().catch((err) => {
-        console.warn('Fullscreen request rejected or blocked by browser:', err);
-      });
-    }
   }, []);
 
   return {
     violationCount,
     activeWarning,
     dismissWarning,
-    requestFullscreen,
   };
 }

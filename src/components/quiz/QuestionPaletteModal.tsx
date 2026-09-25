@@ -3,76 +3,111 @@
 import React from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { cn } from '@/lib/utils/cn';
+import { SessionQuestion } from '@/types/quiz';
+import { isQuestionAnswered } from '@/lib/quiz/sessionEngine';
+import { Check, ArrowRight } from 'lucide-react';
 
 interface QuestionPaletteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  totalQuestions: number;
+  questions: SessionQuestion[];
   currentIndex: number;
-  answers: Record<number, string>;
-  questionIds: number[];
+  answers: Record<string | number, string>;
   onSelectQuestion: (index: number) => void;
 }
 
 export const QuestionPaletteModal: React.FC<QuestionPaletteModalProps> = ({
   isOpen,
   onClose,
-  totalQuestions,
+  questions,
   currentIndex,
   answers,
-  questionIds,
   onSelectQuestion,
 }) => {
+  const totalQuestions = questions.length;
+  const answeredCount = questions.filter((q) => isQuestionAnswered(q, answers)).length;
+  const unansweredCount = totalQuestions - answeredCount;
+
+  // Find first unanswered question index
+  const nextUnansweredIndex = questions.findIndex((q) => !isQuestionAnswered(q, answers));
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title="Question Palette"
-      description="Quickly navigate to any question in your session."
+      description="Quickly navigate to any question or find unanswered questions."
     >
       <div className="space-y-4">
-        <div className="grid grid-cols-5 gap-2.5 max-h-64 overflow-y-auto p-1">
-          {Array.from({ length: totalQuestions }, (_, index) => {
-            const qId = questionIds[index];
-            const isAnswered = Boolean(answers[qId]);
+        {/* Status progress bar summary */}
+        <div className="flex items-center justify-between text-xs px-1">
+          <span className="text-slate-300 font-medium">
+            Progress:{' '}
+            <strong className="text-[#9db40c] font-mono-tabular font-bold">
+              {answeredCount}/{totalQuestions}
+            </strong>{' '}
+            Answered
+          </span>
+          {unansweredCount > 0 && nextUnansweredIndex !== -1 && (
+            <button
+              type="button"
+              onClick={() => {
+                onSelectQuestion(nextUnansweredIndex);
+                onClose();
+              }}
+              className="text-xs font-semibold text-[#9db40c] hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <span>Next Unanswered (#{nextUnansweredIndex + 1})</span>
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+
+        {/* 5-column Question Grid */}
+        <div className="grid grid-cols-5 gap-2.5 max-h-72 overflow-y-auto p-1">
+          {questions.map((q, index) => {
+            const isAnswered = isQuestionAnswered(q, answers);
             const isCurrent = index === currentIndex;
 
             return (
               <button
-                key={index}
+                key={q.question_id || index}
                 onClick={() => {
                   onSelectQuestion(index);
                   onClose();
                 }}
                 className={cn(
-                  'h-11 rounded-xl text-xs font-semibold font-mono-tabular transition-all flex flex-col items-center justify-center border',
-                  isCurrent
-                    ? 'border-neutral-900 bg-neutral-900 text-white shadow-sm ring-2 ring-neutral-900 ring-offset-1'
-                    : isAnswered
-                    ? 'bg-neutral-100 border-neutral-300 text-neutral-900 hover:bg-neutral-200'
-                    : 'bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50'
+                  'h-12 rounded-xl text-xs font-black font-mono-tabular transition-all flex flex-col items-center justify-center border relative cursor-pointer',
+                  isAnswered
+                    ? 'bg-[#9db40c] text-[#070916] border-[#9db40c] shadow-[0_0_10px_rgba(157,180,12,0.35)] hover:brightness-105'
+                    : 'bg-[#070916] border-[#283f5f]/70 text-slate-300 hover:border-slate-400 hover:bg-[#283f5f]/30',
+                  isCurrent && 'ring-2 ring-white ring-offset-2 ring-offset-[#0d1224] scale-105 z-10'
                 )}
+                title={`Question ${index + 1}: ${isAnswered ? 'Answered' : 'Unanswered'}`}
               >
                 <span>{index + 1}</span>
-                {isAnswered && !isCurrent && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 mt-0.5" />
+                {isAnswered ? (
+                  <Check className="w-3 h-3 stroke-[3] mt-0.5 text-[#070916]" />
+                ) : (
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-600 mt-0.5" />
                 )}
               </button>
             );
           })}
         </div>
 
-        <div className="flex items-center justify-between text-xs text-neutral-500 pt-3 border-t border-neutral-200">
+        {/* Legend */}
+        <div className="flex items-center justify-between text-xs text-slate-400 pt-3 border-t border-[#283f5f]/40">
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block" />
-            <span>Answered</span>
+            <span className="w-3 h-3 rounded-md bg-[#9db40c] border border-[#9db40c] inline-block" />
+            <span className="text-white font-medium">Answered ({answeredCount})</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-neutral-200 border border-neutral-300 inline-block" />
-            <span>Unanswered</span>
+            <span className="w-3 h-3 rounded-md bg-[#070916] border border-[#283f5f] inline-block" />
+            <span>Unanswered ({unansweredCount})</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-neutral-900 inline-block" />
+            <span className="w-3 h-3 rounded-md bg-transparent border-2 border-white inline-block" />
             <span>Current</span>
           </div>
         </div>

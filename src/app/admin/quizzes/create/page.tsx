@@ -107,26 +107,26 @@ export default function CreateQuizPage() {
       <div className="flex items-center justify-between">
         <Link
           href="/admin/quizzes"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-neutral-900 transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Quizzes</span>
         </Link>
-        <span className="text-xs text-neutral-400 font-mono-tabular">Symposium Round Creator</span>
+        <span className="text-xs text-slate-400 font-mono-tabular">Symposium Round Creator</span>
       </div>
 
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
           Create New Quiz Round
         </h1>
-        <p className="text-xs sm:text-sm text-neutral-500 mt-1">
+        <p className="text-xs sm:text-sm text-slate-400 mt-1">
           Select questions from the common question bank, set question count per participant, and configure the countdown duration.
         </p>
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs flex items-start gap-3">
-          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-3">
+          <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
       )}
@@ -134,14 +134,14 @@ export default function CreateQuizPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Core Metadata Card */}
         <Card className="p-6 space-y-4">
-          <h3 className="text-sm font-semibold text-neutral-900 pb-2 border-b border-neutral-100">
+          <h3 className="text-sm font-semibold text-white pb-2 border-b border-[#283f5f]/50">
             Quiz Configuration
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Title */}
             <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Quiz Title
               </label>
               <input
@@ -150,20 +150,20 @@ export default function CreateQuizPage() {
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. Technica Round 1"
                 required
-                className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:bg-white transition-all"
+                className="w-full px-4 py-2.5 bg-[#070916] border border-[#283f5f] rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#9db40c] transition-all"
               />
             </div>
 
             {/* Code */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider">
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
                   Quiz Code
                 </label>
                 <button
                   type="button"
                   onClick={generateRandomCode}
-                  className="text-[11px] text-neutral-500 hover:text-neutral-900 flex items-center gap-1 font-medium"
+                  className="text-[11px] text-[#9db40c] hover:text-white flex items-center gap-1 font-medium transition-colors"
                 >
                   <Sparkles className="w-3 h-3" />
                   Generate
@@ -176,29 +176,29 @@ export default function CreateQuizPage() {
                 placeholder="TECH26"
                 maxLength={8}
                 required
-                className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-mono-tabular font-bold tracking-wider uppercase text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:bg-white transition-all"
+                className="w-full px-4 py-2.5 bg-[#070916] border border-[#283f5f] rounded-xl text-sm font-mono-tabular font-bold tracking-wider uppercase text-[#9db40c] focus:outline-none focus:ring-2 focus:ring-[#9db40c] transition-all"
               />
             </div>
 
             {/* Status */}
             <div>
-              <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Status
               </label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as QuizStatus)}
-                className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:bg-white transition-all"
+                className="w-full px-4 py-2.5 bg-[#070916] border border-[#283f5f] rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#9db40c] transition-all"
               >
-                <option value="live">Live (Accepting Participants)</option>
-                <option value="draft">Draft (Private)</option>
-                <option value="closed">Closed (Finished)</option>
+                <option value="live" className="bg-[#070916] text-white">Live (Accepting Participants)</option>
+                <option value="draft" className="bg-[#070916] text-white">Draft (Private)</option>
+                <option value="closed" className="bg-[#070916] text-white">Closed (Finished)</option>
               </select>
             </div>
 
             {/* Duration */}
             <div>
-              <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Duration (Minutes)
               </label>
               <input
@@ -208,16 +208,16 @@ export default function CreateQuizPage() {
                 value={durationMinutes}
                 onChange={(e) => setDurationMinutes(Number(e.target.value))}
                 required
-                className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-mono-tabular text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:bg-white transition-all"
+                className="w-full px-4 py-2.5 bg-[#070916] border border-[#283f5f] rounded-xl text-sm font-mono-tabular text-white focus:outline-none focus:ring-2 focus:ring-[#9db40c] transition-all"
               />
-              <span className="text-[11px] text-neutral-400 mt-1 block">
+              <span className="text-[11px] text-slate-400 mt-1 block">
                 Can be updated by admin anytime while quiz is running
               </span>
             </div>
 
             {/* Questions to Serve to Participant */}
             <div>
-              <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Question Count per Participant
               </label>
               <input
@@ -227,16 +227,16 @@ export default function CreateQuizPage() {
                 value={questionCount}
                 onChange={(e) => setQuestionCount(Number(e.target.value))}
                 required
-                className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-mono-tabular text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:bg-white transition-all"
+                className="w-full px-4 py-2.5 bg-[#070916] border border-[#283f5f] rounded-xl text-sm font-mono-tabular text-white focus:outline-none focus:ring-2 focus:ring-[#9db40c] transition-all"
               />
-              <span className="text-[11px] text-neutral-500 font-medium mt-1 block">
+              <span className="text-[11px] text-slate-400 font-medium mt-1 block">
                 Every participant receives exactly {questionCount} randomized questions.
               </span>
             </div>
 
             {/* Description */}
             <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Description (Optional)
               </label>
               <textarea
@@ -244,7 +244,7 @@ export default function CreateQuizPage() {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Symposium rules, instructions, or focus areas..."
                 rows={2}
-                className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:bg-white transition-all"
+                className="w-full px-4 py-2.5 bg-[#070916] border border-[#283f5f] rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#9db40c] transition-all"
               />
             </div>
           </div>

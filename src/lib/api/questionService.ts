@@ -10,6 +10,7 @@ class QuestionService {
       const qType = q.question_type || (hasCode ? 'debug' : 'quiz');
       return {
         ...q,
+        concept_id: q.concept_id,
         question_type: qType,
         category: qType === 'debug' ? 'debugging' : 'quiz',
         language: q.language || (q.category === 'Cross-Language' ? 'General' : q.category) || 'General',
@@ -34,6 +35,20 @@ class QuestionService {
         q.question_type === 'debug' &&
         (q.language || '').trim().toLowerCase() === target
     );
+  }
+
+  public async getDebugQuestionByConceptAndLanguage(
+    conceptId: string,
+    language: string
+  ): Promise<Question | null> {
+    const target = language.trim().toLowerCase();
+    const found = this.questions.find(
+      (q) =>
+        q.question_type === 'debug' &&
+        q.concept_id === conceptId &&
+        (q.language || '').trim().toLowerCase() === target
+    );
+    return found ? { ...found } : null;
   }
 
   public async getQuestion(id: number): Promise<Question | null> {

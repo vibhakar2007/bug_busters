@@ -1,8 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Participant } from '@/types/participant';
 import { ParticipantActivity } from '@/types/activity';
 import { participantService } from '@/lib/api/participantService';
 import { activityService } from '@/lib/api/activityService';
+
+function deduplicateActivities(items: ParticipantActivity[]): ParticipantActivity[] {
+  const seenIds = new Set<number>();
+  const seenFingerprints = new Set<string>();
+  const deduped: ParticipantActivity[] = [];
+
+  for (const item of items) {
+    if (!item) continue;
+    if (seenIds.has(item.activity_id)) continue;
+
+    const timeBucket = Math.floor(new Date(item.event_time).getTime() / 2000);
+    const fingerprint = `${item.participant_id}_${item.event_type}_${timeBucket}`;
+    if (seenFingerprints.has(fingerprint)) continue;
+
+    seenIds.add(item.activity_id);
+    seenFingerprints.add(fingerprint);
+    deduped.push(item);
+  }
+
+  return deduped;
+}
 
 export function useLiveMonitor() {
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -15,7 +36,7 @@ export function useLiveMonitor() {
     });
 
     const unsubActivity = activityService.subscribeToActivity((newActivity) => {
-      setActivities((prev) => [newActivity, ...prev.slice(0, 49)]);
+      setActivities((prev) => deduplicateActivities([newActivity, ...prev]).slice(0, 50));
     });
 
     return () => {
@@ -24,35 +45,51 @@ export function useLiveMonitor() {
     };
   }, []);
 
+  const pEtagRef = useRef<string | null>(null);
+  const aEtagRef = useRef<string | null>(null);
+
   // Multi-user periodic sync to automatically pull live data across all connected devices
   useEffect(() => {
     let isMounted = true;
 
     const fetchSync = async () => {
       try {
-        const tunnelHeaders = {
+        const pHeaders: Record<string, string> = {
           'Accept': 'application/json',
           'ngrok-skip-browser-warning': 'true',
           'bypass-tunnel-reminder': 'true',
         };
+        if (pEtagRef.current) pHeaders['If-None-Match'] = pEtagRef.current;
+
+        const aHeaders: Record<string, string> = {
+          'Accept': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+          'bypass-tunnel-reminder': 'true',
+        };
+        if (aEtagRef.current) aHeaders['If-None-Match'] = aEtagRef.current;
+
         const [pRes, aRes] = await Promise.all([
-          fetch('/api/participants?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', { headers: tunnelHeaders }),
-          fetch('/api/activity?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', { headers: tunnelHeaders }),
+          fetch('/api/participants?ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', { headers: pHeaders }),
+          fetch('/api/activity?limit=50&ngrok-skip-browser-warning=true&bypass-tunnel-reminder=true', { headers: aHeaders }),
         ]);
 
         if (!isMounted) return;
 
-        if (pRes.ok) {
+        if (pRes.status === 200) {
+          const etag = pRes.headers.get('etag');
+          if (etag) pEtagRef.current = etag;
           const pData = await pRes.json();
           if (Array.isArray(pData)) {
             setParticipants(pData);
           }
         }
 
-        if (aRes.ok) {
+        if (aRes.status === 200) {
+          const etag = aRes.headers.get('etag');
+          if (etag) aEtagRef.current = etag;
           const aData = await aRes.json();
           if (Array.isArray(aData)) {
-            setActivities(aData.slice(0, 50));
+            setActivities(deduplicateActivities(aData).slice(0, 50));
           }
         }
       } catch {

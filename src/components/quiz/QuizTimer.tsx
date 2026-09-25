@@ -26,21 +26,21 @@ export const QuizTimer: React.FC<QuizTimerProps> = ({
       className={cn(
         'flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-colors shadow-xs',
         isCritical
-          ? 'bg-rose-50 border-rose-200 text-rose-800 animate-pulse'
-          : 'bg-white border-neutral-200/90 text-neutral-900',
+          ? 'bg-rose-500/10 border-rose-500/30 text-rose-300 animate-pulse'
+          : 'bg-[#0d1224] border-[#283f5f] text-white',
         className
       )}
     >
       {isCritical ? (
-        <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+        <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
       ) : (
-        <Clock className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+        <Clock className="w-3.5 h-3.5 text-[#9db40c] shrink-0" />
       )}
       <div className="flex flex-col items-start leading-none">
-        <span className="text-[9px] uppercase font-bold tracking-wider text-neutral-400">
+        <span className="text-[9px] uppercase font-bold tracking-wider text-slate-400">
           Time Remaining
         </span>
-        <span className="font-mono-tabular font-bold text-sm tracking-tight text-neutral-950 mt-0.5">
+        <span className="font-mono-tabular font-bold text-sm tracking-tight text-white mt-0.5">
           {formatted}
         </span>
       </div>

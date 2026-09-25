@@ -36,22 +36,24 @@ export default function ParticipantsAdminPage() {
         last_activity_description: 'Flag cleared by admin',
       });
       setSelectedParticipant(updated);
+      setParticipants((prev) => prev.map((p) => (p.participant_id === id ? updated : p)));
     } else {
       const updated = await participantService.updateParticipant(id, {
         status: 'flagged',
         last_activity_description: 'Manually flagged by admin',
       });
       setSelectedParticipant(updated);
+      setParticipants((prev) => prev.map((p) => (p.participant_id === id ? updated : p)));
     }
   };
 
   return (
     <div ref={containerRef} className="space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
           Participant Directory
         </h1>
-        <p className="text-xs sm:text-sm text-neutral-500 mt-1">
+        <p className="text-xs sm:text-sm text-slate-400 mt-1">
           Complete registry of all symposium participants, progress states, and audit records.
         </p>
       </div>
@@ -59,6 +61,7 @@ export default function ParticipantsAdminPage() {
       <LiveParticipantTable
         participants={participants}
         onSelectParticipant={handleSelectParticipant}
+        onClearFlag={(id) => handleFlagToggle(id, 'flagged')}
       />
 
       <ParticipantDrawer

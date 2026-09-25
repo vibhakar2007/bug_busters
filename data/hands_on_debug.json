@@ -1,0 +1,578 @@
+[
+  {
+    "id": 1,
+    "title": "Add Two Numbers",
+    "category": "debugging",
+    "difficulty": "easy",
+    "description": "The function `add(a, b)` must return the sum of two integers `a` and `b`. The current code contains an arithmetic bug that subtracts `b` from `a` instead. Fix the bug so that it correctly returns the sum.",
+    "function_name": "add",
+    "function_name_python": "add",
+    "function_name_java": "add",
+    "function_name_c": "add",
+    "function_name_cpp": "add",
+    "language": "python",
+    "initial_code": "function add(a, b) {\n  return a - b;\n}",
+    "initial_code_python": "def add(a: int, b: int) -> int:\n    return a - b",
+    "initial_code_java": "public class Solution {\n    public static int add(int a, int b) {\n        return a - b;\n    }\n}",
+    "initial_code_c": "int add(int a, int b) {\n    return a - b;\n}",
+    "initial_code_cpp": "int add(int a, int b) {\n    return a - b;\n}",
+    "solution_code": "function add(a, b) {\n  return a + b;\n}",
+    "solution_code_python": "def add(a: int, b: int) -> int:\n    return a + b",
+    "solution_code_java": "public class Solution {\n    public static int add(int a, int b) {\n        return a + b;\n    }\n}",
+    "solution_code_c": "int add(int a, int b) {\n    return a + b;\n}",
+    "solution_code_cpp": "int add(int a, int b) {\n    return a + b;\n}",
+    "test_cases": [
+      {
+        "inputs": [
+          2,
+          3
+        ],
+        "expected": 5,
+        "description": "Adding two positive numbers 2 and 3"
+      },
+      {
+        "inputs": [
+          -5,
+          10
+        ],
+        "expected": 5,
+        "description": "Adding negative and positive numbers"
+      },
+      {
+        "inputs": [
+          0,
+          0
+        ],
+        "expected": 0,
+        "description": "Adding zeros"
+      },
+      {
+        "inputs": [
+          100,
+          250
+        ],
+        "expected": 350,
+        "description": "Adding larger values"
+      }
+    ],
+    "hints": [
+      "Check the operator used in the return statement. Addition requires '+' instead of '-'."
+    ]
+  },
+  {
+    "id": 2,
+    "title": "Even or Odd Checker",
+    "category": "debugging",
+    "difficulty": "easy",
+    "description": "The function `is_even(n)` must return `true` if `n` is an even number, and `false` if it is odd. The current implementation mistakenly checks whether `n % 2 == 1`.",
+    "function_name": "isEven",
+    "function_name_python": "is_even",
+    "function_name_java": "isEven",
+    "function_name_c": "is_even",
+    "function_name_cpp": "is_even",
+    "language": "python",
+    "initial_code": "function isEven(n) {\n  return n % 2 === 1;\n}",
+    "initial_code_python": "def is_even(n: int) -> bool:\n    return n % 2 == 1",
+    "initial_code_java": "public class Solution {\n    public static boolean isEven(int n) {\n        return n % 2 == 1;\n    }\n}",
+    "initial_code_c": "int is_even(int n) {\n    return (n % 2 == 1);\n}",
+    "initial_code_cpp": "bool is_even(int n) {\n    return (n % 2 == 1);\n}",
+    "solution_code": "function isEven(n) {\n  return n % 2 === 0;\n}",
+    "solution_code_python": "def is_even(n: int) -> bool:\n    return n % 2 == 0",
+    "solution_code_java": "public class Solution {\n    public static boolean isEven(int n) {\n        return n % 2 == 0;\n    }\n}",
+    "solution_code_c": "int is_even(int n) {\n    return (n % 2 == 0);\n}",
+    "solution_code_cpp": "bool is_even(int n) {\n    return (n % 2 == 0);\n}",
+    "test_cases": [
+      {
+        "inputs": [
+          4
+        ],
+        "expected": true,
+        "description": "Check even number 4"
+      },
+      {
+        "inputs": [
+          7
+        ],
+        "expected": false,
+        "description": "Check odd number 7"
+      },
+      {
+        "inputs": [
+          0
+        ],
+        "expected": true,
+        "description": "Check zero (even)"
+      },
+      {
+        "inputs": [
+          -2
+        ],
+        "expected": true,
+        "description": "Check negative even number -2"
+      }
+    ],
+    "hints": [
+      "An even number divided by 2 leaves a remainder of 0: n % 2 == 0."
+    ]
+  },
+  {
+    "id": 3,
+    "title": "Maximum of Three Numbers",
+    "category": "debugging",
+    "difficulty": "easy",
+    "description": "The function `max_of_three(a, b, c)` should return the maximum value among three integers `a`, `b`, and `c`. The current code has an inverted comparison `<` in the else-if block.",
+    "function_name": "maxOfThree",
+    "function_name_python": "max_of_three",
+    "function_name_java": "maxOfThree",
+    "function_name_c": "max_of_three",
+    "function_name_cpp": "max_of_three",
+    "language": "python",
+    "initial_code": "function maxOfThree(a, b, c) {\n  if (a >= b && a >= c) return a;\n  if (b < c) return b;\n  return c;\n}",
+    "initial_code_python": "def max_of_three(a: int, b: int, c: int) -> int:\n    if a >= b and a >= c:\n        return a\n    elif b < c:\n        return b\n    return c",
+    "initial_code_java": "public class Solution {\n    public static int maxOfThree(int a, int b, int c) {\n        if (a >= b && a >= c) return a;\n        if (b < c) return b;\n        return c;\n    }\n}",
+    "initial_code_c": "int max_of_three(int a, int b, int c) {\n    if (a >= b && a >= c) return a;\n    if (b < c) return b;\n    return c;\n}",
+    "initial_code_cpp": "int max_of_three(int a, int b, int c) {\n    if (a >= b && a >= c) return a;\n    if (b < c) return b;\n    return c;\n}",
+    "solution_code": "function maxOfThree(a, b, c) {\n  if (a >= b && a >= c) return a;\n  if (b >= c) return b;\n  return c;\n}",
+    "solution_code_python": "def max_of_three(a: int, b: int, c: int) -> int:\n    if a >= b and a >= c:\n        return a\n    elif b >= c:\n        return b\n    return c",
+    "solution_code_java": "public class Solution {\n    public static int maxOfThree(int a, int b, int c) {\n        if (a >= b && a >= c) return a;\n        if (b >= c) return b;\n        return c;\n    }\n}",
+    "solution_code_c": "int max_of_three(int a, int b, int c) {\n    if (a >= b && a >= c) return a;\n    if (b >= c) return b;\n    return c;\n}",
+    "solution_code_cpp": "int max_of_three(int a, int b, int c) {\n    if (a >= b && a >= c) return a;\n    if (b >= c) return b;\n    return c;\n}",
+    "test_cases": [
+      {
+        "inputs": [
+          3,
+          7,
+          5
+        ],
+        "expected": 7,
+        "description": "b is the largest"
+      },
+      {
+        "inputs": [
+          10,
+          4,
+          2
+        ],
+        "expected": 10,
+        "description": "a is the largest"
+      },
+      {
+        "inputs": [
+          1,
+          2,
+          9
+        ],
+        "expected": 9,
+        "description": "c is the largest"
+      },
+      {
+        "inputs": [
+          -5,
+          -1,
+          -8
+        ],
+        "expected": -1,
+        "description": "All negative numbers"
+      }
+    ],
+    "hints": [
+      "If a is not the greatest, b is the greatest if b >= c, otherwise c is the greatest."
+    ]
+  },
+  {
+    "id": 4,
+    "title": "Multiply Two Numbers",
+    "category": "debugging",
+    "difficulty": "easy",
+    "description": "The function `multiply(a, b)` must return the product of `a` and `b`. The current code adds the two numbers instead of multiplying them.",
+    "function_name": "multiply",
+    "function_name_python": "multiply",
+    "function_name_java": "multiply",
+    "function_name_c": "multiply",
+    "function_name_cpp": "multiply",
+    "language": "python",
+    "initial_code": "function multiply(a, b) {\n  return a + b;\n}",
+    "initial_code_python": "def multiply(a: int, b: int) -> int:\n    return a + b",
+    "initial_code_java": "public class Solution {\n    public static int multiply(int a, int b) {\n        return a + b;\n    }\n}",
+    "initial_code_c": "int multiply(int a, int b) {\n    return a + b;\n}",
+    "initial_code_cpp": "int multiply(int a, int b) {\n    return a + b;\n}",
+    "solution_code": "function multiply(a, b) {\n  return a * b;\n}",
+    "solution_code_python": "def multiply(a: int, b: int) -> int:\n    return a * b",
+    "solution_code_java": "public class Solution {\n    public static int multiply(int a, int b) {\n        return a * b;\n    }\n}",
+    "solution_code_c": "int multiply(int a, int b) {\n    return a * b;\n}",
+    "solution_code_cpp": "int multiply(int a, int b) {\n    return a * b;\n}",
+    "test_cases": [
+      {
+        "inputs": [
+          3,
+          4
+        ],
+        "expected": 12,
+        "description": "Multiplication of 3 and 4"
+      },
+      {
+        "inputs": [
+          0,
+          5
+        ],
+        "expected": 0,
+        "description": "Multiplication with 0"
+      },
+      {
+        "inputs": [
+          -2,
+          6
+        ],
+        "expected": -12,
+        "description": "Multiplication with negative number"
+      },
+      {
+        "inputs": [
+          -3,
+          -4
+        ],
+        "expected": 12,
+        "description": "Multiplication of two negative numbers"
+      }
+    ],
+    "hints": [
+      "Use the multiplication operator '*' instead of '+'."
+    ]
+  },
+  {
+    "id": 5,
+    "title": "Reverse a String",
+    "category": "debugging",
+    "difficulty": "easy",
+    "description": "The function `reverse_string(s)` should return the given string reversed. Currently, the implementation returns the input string without reversing it.",
+    "function_name": "reverseString",
+    "function_name_python": "reverse_string",
+    "function_name_java": "reverseString",
+    "function_name_c": "reverse_string",
+    "function_name_cpp": "reverse_string",
+    "language": "python",
+    "initial_code": "function reverseString(s) {\n  return s;\n}",
+    "initial_code_python": "def reverse_string(s: str) -> str:\n    return s",
+    "initial_code_java": "public class Solution {\n    public static String reverseString(String s) {\n        return s;\n    }\n}",
+    "initial_code_c": "char* reverse_string(char* s) {\n    return s;\n}",
+    "initial_code_cpp": "std::string reverse_string(std::string s) {\n    return s;\n}",
+    "solution_code": "function reverseString(s) {\n  return s.split('').reverse().join('');\n}",
+    "solution_code_python": "def reverse_string(s: str) -> str:\n    return s[::-1]",
+    "solution_code_java": "public class Solution {\n    public static String reverseString(String s) {\n        return new StringBuilder(s).reverse().toString();\n    }\n}",
+    "solution_code_c": "char* reverse_string(char* s) {\n    int n = strlen(s);\n    for (int i = 0; i < n / 2; i++) {\n        char temp = s[i];\n        s[i] = s[n - 1 - i];\n        s[n - 1 - i] = temp;\n    }\n    return s;\n}",
+    "solution_code_cpp": "std::string reverse_string(std::string s) {\n    std::reverse(s.begin(), s.end());\n    return s;\n}",
+    "test_cases": [
+      {
+        "inputs": [
+          "hello"
+        ],
+        "expected": "olleh",
+        "description": "Reverse standard word 'hello'"
+      },
+      {
+        "inputs": [
+          "world"
+        ],
+        "expected": "dlrow",
+        "description": "Reverse standard word 'world'"
+      },
+      {
+        "inputs": [
+          "a"
+        ],
+        "expected": "a",
+        "description": "Single character string"
+      },
+      {
+        "inputs": [
+          "12345"
+        ],
+        "expected": "54321",
+        "description": "Numeric string reversal"
+      }
+    ],
+    "hints": [
+      "In Python, string slicing `s[::-1]` reverses a string. In JavaScript, `s.split('').reverse().join('')` achieves this."
+    ]
+  },
+  {
+    "id": 6,
+    "title": "Factorial of a Number",
+    "category": "debugging",
+    "difficulty": "easy",
+    "description": "The function `factorial(n)` must compute the factorial of a non-negative integer `n` (where `0! = 1` and `1! = 1`). The current code incorrectly returns 0 for `n <= 1`, causing the entire multiplication to evaluate to 0.",
+    "function_name": "factorial",
+    "function_name_python": "factorial",
+    "function_name_java": "factorial",
+    "function_name_c": "factorial",
+    "function_name_cpp": "factorial",
+    "language": "python",
+    "initial_code": "function factorial(n) {\n  if (n <= 1) return 0;\n  return n * factorial(n - 1);\n}",
+    "initial_code_python": "def factorial(n: int) -> int:\n    if n <= 1:\n        return 0\n    return n * factorial(n - 1)",
+    "initial_code_java": "public class Solution {\n    public static int factorial(int n) {\n        if (n <= 1) return 0;\n        return n * factorial(n - 1);\n    }\n}",
+    "initial_code_c": "int factorial(int n) {\n    if (n <= 1) return 0;\n    return n * factorial(n - 1);\n}",
+    "initial_code_cpp": "int factorial(int n) {\n    if (n <= 1) return 0;\n    return n * factorial(n - 1);\n}",
+    "solution_code": "function factorial(n) {\n  if (n <= 1) return 1;\n  return n * factorial(n - 1);\n}",
+    "solution_code_python": "def factorial(n: int) -> int:\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)",
+    "solution_code_java": "public class Solution {\n    public static int factorial(int n) {\n        if (n <= 1) return 1;\n        return n * factorial(n - 1);\n    }\n}",
+    "solution_code_c": "int factorial(int n) {\n    if (n <= 1) return 1;\n    return n * factorial(n - 1);\n}",
+    "solution_code_cpp": "int factorial(int n) {\n    if (n <= 1) return 1;\n    return n * factorial(n - 1);\n}",
+    "test_cases": [
+      {
+        "inputs": [
+          0
+        ],
+        "expected": 1,
+        "description": "Factorial of 0 is 1"
+      },
+      {
+        "inputs": [
+          1
+        ],
+        "expected": 1,
+        "description": "Factorial of 1 is 1"
+      },
+      {
+        "inputs": [
+          4
+        ],
+        "expected": 24,
+        "description": "Factorial of 4 (4 * 3 * 2 * 1 = 24)"
+      },
+      {
+        "inputs": [
+          5
+        ],
+        "expected": 120,
+        "description": "Factorial of 5 (120)"
+      }
+    ],
+    "hints": [
+      "The base case of factorial is 0! = 1 and 1! = 1. Return 1 when n <= 1."
+    ]
+  },
+  {
+    "id": 7,
+    "title": "Celsius to Fahrenheit Converter",
+    "category": "debugging",
+    "difficulty": "easy",
+    "description": "The function `celsius_to_fahrenheit(c)` must convert a temperature from Celsius to Fahrenheit using the formula `(C * 9/5) + 32`. The current code subtracts 32 instead of adding 32.",
+    "function_name": "celsiusToFahrenheit",
+    "function_name_python": "celsius_to_fahrenheit",
+    "function_name_java": "celsiusToFahrenheit",
+    "function_name_c": "celsius_to_fahrenheit",
+    "function_name_cpp": "celsius_to_fahrenheit",
+    "language": "python",
+    "initial_code": "function celsiusToFahrenheit(c) {\n  return Math.round((c * 9 / 5) - 32);\n}",
+    "initial_code_python": "def celsius_to_fahrenheit(c: int) -> int:\n    return int((c * 9 / 5) - 32)",
+    "initial_code_java": "public class Solution {\n    public static int celsiusToFahrenheit(int c) {\n        return (int) Math.round((c * 9.0 / 5.0) - 32.0);\n    }\n}",
+    "initial_code_c": "int celsius_to_fahrenheit(int c) {\n    return (int)((c * 9.0 / 5.0) - 32.0);\n}",
+    "initial_code_cpp": "int celsius_to_fahrenheit(int c) {\n    return (int)((c * 9.0 / 5.0) - 32.0);\n}",
+    "solution_code": "function celsiusToFahrenheit(c) {\n  return Math.round((c * 9 / 5) + 32);\n}",
+    "solution_code_python": "def celsius_to_fahrenheit(c: int) -> int:\n    return int((c * 9 / 5) + 32)",
+    "solution_code_java": "public class Solution {\n    public static int celsiusToFahrenheit(int c) {\n        return (int) Math.round((c * 9.0 / 5.0) + 32.0);\n    }\n}",
+    "solution_code_c": "int celsius_to_fahrenheit(int c) {\n    return (int)((c * 9.0 / 5.0) + 32.0);\n}",
+    "solution_code_cpp": "int celsius_to_fahrenheit(int c) {\n    return (int)((c * 9.0 / 5.0) + 32.0);\n}",
+    "test_cases": [
+      {
+        "inputs": [
+          0
+        ],
+        "expected": 32,
+        "description": "Freezing point of water: 0 C = 32 F"
+      },
+      {
+        "inputs": [
+          100
+        ],
+        "expected": 212,
+        "description": "Boiling point of water: 100 C = 212 F"
+      },
+      {
+        "inputs": [
+          25
+        ],
+        "expected": 77,
+        "description": "Room temperature: 25 C = 77 F"
+      },
+      {
+        "inputs": [
+          -40
+        ],
+        "expected": -40,
+        "description": "Intersection point: -40 C = -40 F"
+      }
+    ],
+    "hints": [
+      "The standard conversion formula is F = (C * 9 / 5) + 32."
+    ]
+  },
+  {
+    "id": 8,
+    "title": "Check if Number is Positive",
+    "category": "debugging",
+    "difficulty": "easy",
+    "description": "The function `is_positive(n)` must return `true` if `n` is strictly greater than 0, and `false` otherwise (0 is not positive). The current implementation checks `n < 0` instead of `n > 0`.",
+    "function_name": "isPositive",
+    "function_name_python": "is_positive",
+    "function_name_java": "isPositive",
+    "function_name_c": "is_positive",
+    "function_name_cpp": "is_positive",
+    "language": "python",
+    "initial_code": "function isPositive(n) {\n  return n < 0;\n}",
+    "initial_code_python": "def is_positive(n: int) -> bool:\n    return n < 0",
+    "initial_code_java": "public class Solution {\n    public static boolean isPositive(int n) {\n        return n < 0;\n    }\n}",
+    "initial_code_c": "int is_positive(int n) {\n    return (n < 0);\n}",
+    "initial_code_cpp": "bool is_positive(int n) {\n    return (n < 0);\n}",
+    "solution_code": "function isPositive(n) {\n  return n > 0;\n}",
+    "solution_code_python": "def is_positive(n: int) -> bool:\n    return n > 0",
+    "solution_code_java": "public class Solution {\n    public static boolean isPositive(int n) {\n        return n > 0;\n    }\n}",
+    "solution_code_c": "int is_positive(int n) {\n    return (n > 0);\n}",
+    "solution_code_cpp": "bool is_positive(int n) {\n    return (n > 0);\n}",
+    "test_cases": [
+      {
+        "inputs": [
+          5
+        ],
+        "expected": true,
+        "description": "Positive integer 5"
+      },
+      {
+        "inputs": [
+          -3
+        ],
+        "expected": false,
+        "description": "Negative integer -3"
+      },
+      {
+        "inputs": [
+          0
+        ],
+        "expected": false,
+        "description": "Zero is neither positive nor negative"
+      },
+      {
+        "inputs": [
+          100
+        ],
+        "expected": true,
+        "description": "Positive integer 100"
+      }
+    ],
+    "hints": [
+      "A number is positive if and only if it is strictly greater than 0: n > 0."
+    ]
+  },
+  {
+    "id": 9,
+    "title": "Count Vowels in String",
+    "category": "debugging",
+    "difficulty": "easy",
+    "description": "The function `count_vowels(s)` should return the total count of vowel characters ('a', 'e', 'i', 'o', 'u' both lowercase and uppercase) in the string `s`. The current implementation only checks 'aeio' and omits 'u' as well as uppercase vowels.",
+    "function_name": "countVowels",
+    "function_name_python": "count_vowels",
+    "function_name_java": "countVowels",
+    "function_name_c": "count_vowels",
+    "function_name_cpp": "count_vowels",
+    "language": "python",
+    "initial_code": "function countVowels(s) {\n  const vowels = 'aeio';\n  let count = 0;\n  for (let c of s) {\n    if (vowels.includes(c)) count++;\n  }\n  return count;\n}",
+    "initial_code_python": "def count_vowels(s: str) -> int:\n    vowels = 'aeio'\n    return sum(1 for c in s if c in vowels)",
+    "initial_code_java": "public class Solution {\n    public static int countVowels(String s) {\n        String vowels = \"aeio\";\n        int count = 0;\n        for (char c : s.toCharArray()) {\n            if (vowels.indexOf(c) != -1) count++;\n        }\n        return count;\n    }\n}",
+    "initial_code_c": "int count_vowels(const char* s) {\n    const char* vowels = \"aeio\";\n    int count = 0;\n    while (*s) {\n        if (strchr(vowels, *s)) count++;\n        s++;\n    }\n    return count;\n}",
+    "initial_code_cpp": "int count_vowels(std::string s) {\n    std::string vowels = \"aeio\";\n    int count = 0;\n    for (char c : s) {\n        if (vowels.find(c) != std::string::npos) count++;\n    }\n    return count;\n}",
+    "solution_code": "function countVowels(s) {\n  const vowels = 'aeiouAEIOU';\n  let count = 0;\n  for (let c of s) {\n    if (vowels.includes(c)) count++;\n  }\n  return count;\n}",
+    "solution_code_python": "def count_vowels(s: str) -> int:\n    vowels = 'aeiouAEIOU'\n    return sum(1 for c in s if c in vowels)",
+    "solution_code_java": "public class Solution {\n    public static int countVowels(String s) {\n        String vowels = \"aeiouAEIOU\";\n        int count = 0;\n        for (char c : s.toCharArray()) {\n            if (vowels.indexOf(c) != -1) count++;\n        }\n        return count;\n    }\n}",
+    "solution_code_c": "int count_vowels(const char* s) {\n    const char* vowels = \"aeiouAEIOU\";\n    int count = 0;\n    while (*s) {\n        if (strchr(vowels, *s)) count++;\n        s++;\n    }\n    return count;\n}",
+    "solution_code_cpp": "int count_vowels(std::string s) {\n    std::string vowels = \"aeiouAEIOU\";\n    int count = 0;\n    for (char c : s) {\n        if (vowels.find(c) != std::string::npos) count++;\n    }\n    return count;\n}",
+    "test_cases": [
+      {
+        "inputs": [
+          "hello"
+        ],
+        "expected": 2,
+        "description": "Vowels in 'hello': 'e', 'o'"
+      },
+      {
+        "inputs": [
+          "rhythm"
+        ],
+        "expected": 0,
+        "description": "No vowels in 'rhythm'"
+      },
+      {
+        "inputs": [
+          "AEIOU"
+        ],
+        "expected": 5,
+        "description": "All uppercase vowels"
+      },
+      {
+        "inputs": [
+          "OpenAI"
+        ],
+        "expected": 4,
+        "description": "Mixed case vowels in 'OpenAI': 'O', 'e', 'A', 'I'"
+      }
+    ],
+    "hints": [
+      "Include 'u' in the list of vowels, and ensure you check for both lowercase and uppercase vowels: 'aeiouAEIOU'."
+    ]
+  },
+  {
+    "id": 10,
+    "title": "Check Palindrome Word",
+    "category": "debugging",
+    "difficulty": "easy",
+    "description": "The function `is_palindrome(s)` should return `true` if the string `s` reads the same forwards and backwards, and `false` otherwise. The current implementation uses an inverted comparison.",
+    "function_name": "isPalindrome",
+    "function_name_python": "is_palindrome",
+    "function_name_java": "isPalindrome",
+    "function_name_c": "is_palindrome",
+    "function_name_cpp": "is_palindrome",
+    "language": "python",
+    "initial_code": "function isPalindrome(s) {\n  return s !== s.split('').reverse().join('');\n}",
+    "initial_code_python": "def is_palindrome(s: str) -> bool:\n    return s != s[::-1]",
+    "initial_code_java": "public class Solution {\n    public static boolean isPalindrome(String s) {\n        String rev = new StringBuilder(s).reverse().toString();\n        return !s.equals(rev);\n    }\n}",
+    "initial_code_c": "int is_palindrome(const char* s) {\n    int n = strlen(s);\n    for (int i = 0; i < n / 2; i++) {\n        if (s[i] == s[n - 1 - i]) return 0;\n    }\n    return 1;\n}",
+    "initial_code_cpp": "bool is_palindrome(std::string s) {\n    std::string rev = s;\n    std::reverse(rev.begin(), rev.end());\n    return s != rev;\n}",
+    "solution_code": "function isPalindrome(s) {\n  return s === s.split('').reverse().join('');\n}",
+    "solution_code_python": "def is_palindrome(s: str) -> bool:\n    return s == s[::-1]",
+    "solution_code_java": "public class Solution {\n    public static boolean isPalindrome(String s) {\n        String rev = new StringBuilder(s).reverse().toString();\n        return s.equals(rev);\n    }\n}",
+    "solution_code_c": "int is_palindrome(const char* s) {\n    int n = strlen(s);\n    for (int i = 0; i < n / 2; i++) {\n        if (s[i] != s[n - 1 - i]) return 0;\n    }\n    return 1;\n}",
+    "solution_code_cpp": "bool is_palindrome(std::string s) {\n    std::string rev = s;\n    std::reverse(rev.begin(), rev.end());\n    return s == rev;\n}",
+    "test_cases": [
+      {
+        "inputs": [
+          "racecar"
+        ],
+        "expected": true,
+        "description": "Palindrome word 'racecar'"
+      },
+      {
+        "inputs": [
+          "hello"
+        ],
+        "expected": false,
+        "description": "Non-palindrome word 'hello'"
+      },
+      {
+        "inputs": [
+          "madam"
+        ],
+        "expected": true,
+        "description": "Palindrome word 'madam'"
+      },
+      {
+        "inputs": [
+          "noon"
+        ],
+        "expected": true,
+        "description": "Palindrome word 'noon'"
+      }
+    ],
+    "hints": [
+      "A palindrome reads identically forwards and backwards. Return true when s is equal to its reversed version."
+    ]
+  }
+]
